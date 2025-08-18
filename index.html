@@ -1,9 +1,20 @@
 <script id="PRNG">
+  /**
+   * @file A pseudo-random number generator.
+   * @author LingDong-
+   */
   var Prng = new function() {
-    this.s = 1234;
-    this.p = 999979; //9887//983
-    this.q = 999983; //9967//991
-    this.m = this.p * this.q;
+    // The following constants are used for the pseudo-random number generator.
+    this.s = 1234; // Initial seed.
+    this.p = 999979; // A large prime number.
+    this.q = 999983; // Another large prime number.
+    this.m = this.p * this.q; // The modulus for the generator.
+
+    /**
+     * Computes a hash of the given value.
+     * @param {any} x - The value to hash.
+     * @returns {number} The hash of the value.
+     */
     this.hash = function(x) {
       var y = window.btoa(JSON.stringify(x));
       var z = 0;
@@ -12,6 +23,11 @@
       }
       return z;
     };
+
+    /**
+     * Seeds the pseudo-random number generator.
+     * @param {any} x - The seed value. If not provided, the current time is used.
+     */
     this.seed = function(x) {
       if (x == undefined) {
         x = new Date().getTime();
@@ -31,10 +47,21 @@
         Prng.next();
       }
     };
+
+    /**
+     * Generates the next pseudo-random number.
+     * @returns {number} The next pseudo-random number between 0 and 1.
+     */
     this.next = function() {
       Prng.s = (Prng.s * Prng.s) % Prng.m;
       return Prng.s / Prng.m;
     };
+
+    /**
+     * Tests the distribution of the pseudo-random number generator.
+     * @param {function} f - An optional function to test. If not provided, Prng.next() is used.
+     * @returns {array} An array representing the distribution of the generated numbers.
+     */
     this.test = function(f) {
       var F =
         f ||
@@ -86,28 +113,55 @@
 </script>
 
 <script id="PerlinNoise">
-  //https://raw.githubusercontent.com/processing/p5.js/master/src/math/noise.js
+  /**
+   * @file Perlin noise implementation.
+   * @author LingDong-
+   * @modified 2024-05-29
+   * @see https://raw.githubusercontent.com/processing/p5.js/master/src/math/noise.js
+   */
   var Noise = new function() {
+    // Constants for Perlin noise
     var PERLIN_YWRAPB = 4;
     var PERLIN_YWRAP = 1 << PERLIN_YWRAPB;
     var PERLIN_ZWRAPB = 8;
     var PERLIN_ZWRAP = 1 << PERLIN_ZWRAPB;
     var PERLIN_SIZE = 4095;
-    var perlin_octaves = 4;
-    var perlin_amp_falloff = 0.5;
+
+    // Parameters for Perlin noise
+    var perlin_octaves = 4; // Default number of octaves
+    var perlin_amp_falloff = 0.5; // Default amplitude falloff
+
+    /**
+     * Scales a value to a cosine curve.
+     * @param {number} i - The input value.
+     * @returns {number} The scaled value.
+     */
     var scaled_cosine = function(i) {
       return 0.5 * (1.0 - Math.cos(i * Math.PI));
     };
-    var perlin;
+
+    var perlin; // The Perlin noise array
+
+    /**
+     * Generates a Perlin noise value for the given coordinates.
+     * @param {number} x - The x-coordinate.
+     * @param {number} y - The y-coordinate.
+     * @param {number} z - The z-coordinate.
+     * @returns {number} The Perlin noise value.
+     */
     this.noise = function(x, y, z) {
       y = y || 0;
       z = z || 0;
+
+      // Initialize the Perlin noise array if it's not already
       if (perlin == null) {
         perlin = new Array(PERLIN_SIZE + 1);
         for (var i = 0; i < PERLIN_SIZE + 1; i++) {
           perlin[i] = Math.random();
         }
       }
+
+      // Ensure coordinates are positive
       if (x < 0) {
         x = -x;
       }
@@ -117,6 +171,7 @@
       if (z < 0) {
         z = -z;
       }
+
       var xi = Math.floor(x),
         yi = Math.floor(y),
         zi = Math.floor(z);
@@ -127,30 +182,40 @@
       var r = 0;
       var ampl = 0.5;
       var n1, n2, n3;
+
+      // Main loop for calculating Perlin noise
       for (var o = 0; o < perlin_octaves; o++) {
         var of = xi + (yi << PERLIN_YWRAPB) + (zi << PERLIN_ZWRAPB);
+
         rxf = scaled_cosine(xf);
         ryf = scaled_cosine(yf);
+
         n1 = perlin[of & PERLIN_SIZE];
         n1 += rxf * (perlin[(of + 1) & PERLIN_SIZE] - n1);
         n2 = perlin[(of + PERLIN_YWRAP) & PERLIN_SIZE];
         n2 += rxf * (perlin[(of + PERLIN_YWRAP + 1) & PERLIN_SIZE] - n2);
         n1 += ryf * (n2 - n1);
+
         of += PERLIN_ZWRAP;
         n2 = perlin[of & PERLIN_SIZE];
         n2 += rxf * (perlin[(of + 1) & PERLIN_SIZE] - n2);
         n3 = perlin[(of + PERLIN_YWRAP) & PERLIN_SIZE];
         n3 += rxf * (perlin[(of + PERLIN_YWRAP + 1) & PERLIN_SIZE] - n3);
         n2 += ryf * (n3 - n2);
+
         n1 += scaled_cosine(zf) * (n2 - n1);
+
         r += n1 * ampl;
         ampl *= perlin_amp_falloff;
+
+        // Scale coordinates for the next octave
         xi <<= 1;
         xf *= 2;
         yi <<= 1;
         yf *= 2;
         zi <<= 1;
         zf *= 2;
+
         if (xf >= 1.0) {
           xi++;
           xf--;
@@ -166,6 +231,12 @@
       }
       return r;
     };
+
+    /**
+     * Sets the detail of the Perlin noise.
+     * @param {number} lod - The number of octaves.
+     * @param {number} falloff - The amplitude falloff.
+     */
     this.noiseDetail = function(lod, falloff) {
       if (lod > 0) {
         perlin_octaves = lod;
@@ -174,7 +245,13 @@
         perlin_amp_falloff = falloff;
       }
     };
+
+    /**
+     * Sets the seed for the Perlin noise.
+     * @param {number} seed - The seed value.
+     */
     this.noiseSeed = function(seed) {
+      // Linear congruential generator for seeding
       var lcg = (function() {
         var m = 4294967296,
           a = 1664525,
@@ -194,6 +271,7 @@
           },
         };
       })();
+
       lcg.setSeed(seed);
       perlin = new Array(PERLIN_SIZE + 1);
       for (var i = 0; i < PERLIN_SIZE + 1; i++) {
@@ -204,34 +282,61 @@
 </script>
 
 <script id="PolyTools">
+  /**
+   * @file A collection of tools for working with polygons.
+   * @author LingDong-
+   */
   var PolyTools = new function() {
-    this.midPt = function() {
+    /**
+     * Calculates the midpoint of a set of points.
+     * @param {...number[]} points - A list of points.
+     * @returns {number[]} The midpoint of the points.
+     */
+    this.calculateMidpoint = function() {
       var plist =
         arguments.length == 1 ? arguments[0] : Array.apply(null, arguments);
       return plist.reduce(
         function(acc, v) {
-          /*       if (v == undefined || acc == undefined){
-        console.log("ERRR");
-        console.log(plist)
-        return [0,0]
-      } */
           return [v[0] / plist.length + acc[0], v[1] / plist.length + acc[1]];
         },
         [0, 0],
       );
     };
+
+    /**
+     * Triangulates a polygon using the ear-clipping method.
+     * @param {number[][]} plist - The list of points defining the polygon.
+     * @param {object} args - Optional arguments.
+     * @param {number} args.area - The desired area of the triangles.
+     * @param {boolean} args.convex - Whether the polygon is convex.
+     * @param {boolean} args.optimize - Whether to optimize the triangulation.
+     * @returns {number[][][]} A list of triangles.
+     */
     this.triangulate = function(plist, args) {
-      //return []
       var args = args != undefined ? args : {};
       var area = args.area != undefined ? args.area : 100;
       var convex = args.convex != undefined ? args.convex : false;
       var optimize = args.optimize != undefined ? args.optimize : true;
+
+      /**
+       * Calculates the line expression (m, k) for a line defined by two points.
+       * @param {number[]} pt0 - The first point.
+       * @param {number[]} pt1 - The second point.
+       * @returns {number[]} The line expression [m, k] where y = mx + k.
+       */
       function lineExpr(pt0, pt1) {
         var den = pt1[0] - pt0[0];
         var m = den == 0 ? Infinity : (pt1[1] - pt0[1]) / den;
         var k = pt0[1] - m * pt0[0];
         return [m, k];
       }
+
+      /**
+       * Checks if two line segments intersect.
+       * @param {number[][]} ln0 - The first line segment.
+       * @param {number[][]} ln1 - The second line segment.
+       * @returns {number[]|boolean} The intersection point or false if they don't intersect.
+       */
       function intersect(ln0, ln1) {
         var le0 = lineExpr(...ln0);
         var le1 = lineExpr(...ln1);
@@ -242,7 +347,6 @@
         var x = (le1[1] - le0[1]) / den;
         var y = le0[0] * x + le0[1];
         function onSeg(p, ln) {
-          //non-inclusive
           return (
             Math.min(ln[0][0], ln[1][0]) <= p[0] &&
             p[0] <= Math.max(ln[0][0], ln[1][0]) &&
@@ -255,6 +359,13 @@
         }
         return false;
       }
+
+      /**
+       * Checks if a point is inside a polygon.
+       * @param {number[]} pt - The point to check.
+       * @param {number[][]} plist - The polygon.
+       * @returns {boolean} True if the point is inside the polygon, false otherwise.
+       */
       function ptInPoly(pt, plist) {
         var scount = 0;
         for (var i = 0; i < plist.length; i++) {
@@ -269,6 +380,13 @@
         }
         return scount % 2 == 1;
       }
+
+      /**
+       * Checks if a line segment is inside a polygon.
+       * @param {number[][]} ln - The line segment to check.
+       * @param {number[][]} plist - The polygon.
+       * @returns {boolean} True if the line is inside the polygon, false otherwise.
+       */
       function lnInPoly(ln, plist) {
         var lnc = [[0, 0], [0, 0]];
         var ep = 0.01;
@@ -285,13 +403,18 @@
             return false;
           }
         }
-        var mid = PolyTools.midPt(ln);
+        var mid = PolyTools.calculateMidpoint(ln);
         if (ptInPoly(mid, plist) == false) {
           return false;
         }
         return true;
       }
 
+      /**
+       * Calculates the lengths of the sides of a polygon.
+       * @param {number[][]} plist - The polygon.
+       * @returns {number[]} A list of side lengths.
+       */
       function sidesOf(plist) {
         var slist = [];
         for (var i = 0; i < plist.length; i++) {
@@ -304,6 +427,12 @@
         }
         return slist;
       }
+
+      /**
+       * Calculates the area of a triangle using Heron's formula.
+       * @param {number[][]} plist - The triangle.
+       * @returns {number} The area of the triangle.
+       */
       function areaOf(plist) {
         var slist = sidesOf(plist);
         var a = slist[0],
@@ -312,6 +441,12 @@
         var s = (a + b + c) / 2;
         return Math.sqrt(s * (s - a) * (s - b) * (s - c));
       }
+
+      /**
+       * Calculates the sliver ratio of a triangle.
+       * @param {number[][]} plist - The triangle.
+       * @returns {number} The sliver ratio.
+       */
       function sliverRatio(plist) {
         var A = areaOf(plist);
         var P = sidesOf(plist).reduce(function(m, n) {
@@ -319,6 +454,12 @@
         }, 0);
         return A / P;
       }
+
+      /**
+       * Finds the best "ear" to clip from a polygon.
+       * @param {number[][]} plist - The polygon.
+       * @returns {Array} The best ear and the remaining polygon.
+       */
       function bestEar(plist) {
         var cuts = [];
         for (var i = 0; i < plist.length; i++) {
@@ -344,6 +485,13 @@
         }
         return best;
       }
+
+      /**
+       * Shatters a polygon into smaller triangles if its area is too large.
+       * @param {number[][]} plist - The polygon.
+       * @param {number} a - The maximum area.
+       * @returns {number[][][]} A list of triangles.
+       */
       function shatter(plist, a) {
         if (plist.length == 0) {
           return [];
@@ -359,7 +507,7 @@
           var nind = (ind + 1) % plist.length;
           var lind = (ind + 2) % plist.length;
           try {
-            var mid = PolyTools.midPt([plist[ind], plist[nind]]);
+            var mid = PolyTools.calculateMidpoint([plist[ind], plist[nind]]);
           } catch (err) {
             console.log(plist);
             console.log(err);
@@ -370,6 +518,7 @@
           );
         }
       }
+
       if (plist.length <= 3) {
         return shatter(plist, area);
       } else {
@@ -383,24 +532,53 @@
 </script>
 
 <script id="Util">
-  function unNan(plist) {
+  /**
+   * @file A collection of utility functions.
+   * @author LingDong-
+   */
+
+  /**
+   * Recursively replaces NaN, null, and undefined values in an array with 0.
+   * @param {Array} plist - The array to sanitize.
+   * @returns {Array} The sanitized array.
+   */
+  function sanitizeArray(plist) {
     if (typeof plist != "object" || plist == null) {
       return plist || 0;
     } else {
-      return plist.map(unNan);
+      return plist.map(sanitizeArray);
     }
   }
-  //console.log(unNan([[undefined,[NaN,NaN],null],false,1]))
 
+  /**
+   * Calculates the Euclidean distance between two points.
+   * @param {number[]} p0 - The first point.
+   * @param {number[]} p1 - The second point.
+   * @returns {number} The distance between the two points.
+   */
   function distance(p0, p1) {
     return Math.sqrt(Math.pow(p0[0] - p1[0], 2) + Math.pow(p0[1] - p1[1], 2));
   }
 
-  function mapval(value, istart, istop, ostart, ostop) {
+  /**
+   * Maps a value from one range to another.
+   * @param {number} value - The value to map.
+   * @param {number} istart - The lower bound of the value's current range.
+   * @param {number} istop - The upper bound of the value's current range.
+   * @param {number} ostart - The lower bound of the value's target range.
+   * @param {number} ostop - The upper bound of the value's target range.
+   * @returns {number} The mapped value.
+   */
+  function mapValue(value, istart, istop, ostart, ostop) {
     return (
       ostart + (ostop - ostart) * (((value - istart) * 1.0) / (istop - istart))
     );
   }
+
+  /**
+   * Normalizes a list of noise values to make them loop seamlessly.
+   * @param {number[]} nslist - The list of noise values.
+   */
   function loopNoise(nslist) {
     var dif = nslist[nslist.length - 1] - nslist[0];
     var bds = [100, -100];
@@ -410,31 +588,51 @@
       if (nslist[i] > bds[1]) bds[1] = nslist[i];
     }
     for (var i = 0; i < nslist.length; i++) {
-      nslist[i] = mapval(nslist[i], bds[0], bds[1], 0, 1);
+      nslist[i] = mapValue(nslist[i], bds[0], bds[1], 0, 1);
     }
   }
 
+  /**
+   * Selects a random element from an array.
+   * @param {Array} arr - The array to choose from.
+   * @returns {*} A random element from the array.
+   */
   function randChoice(arr) {
     return arr[Math.floor(arr.length * Math.random())];
   }
 
-  function normRand(m, M) {
-    return mapval(Math.random(), 0, 1, m, M);
+  /**
+   * Generates a random number within a given range.
+   * @param {number} m - The minimum value.
+   * @param {number} M - The maximum value.
+   * @returns {number} A random number between m and M.
+   */
+  function randomInRange(m, M) {
+    return mapValue(Math.random(), 0, 1, m, M);
   }
 
-  function wtrand(func) {
+  /**
+   * Generates a random number with a weighted distribution.
+   * @param {function} func - The weighting function.
+   * @returns {number} A random number.
+   */
+  function weightedRandom(func) {
     var x = Math.random();
     var y = Math.random();
     if (y < func(x)) {
       return x;
     } else {
-      return wtrand(func);
+      return weightedRandom(func);
     }
   }
 
+  /**
+   * Generates a random number with a Gaussian distribution.
+   * @returns {number} A random number with a Gaussian distribution.
+   */
   function randGaussian() {
     return (
-      wtrand(function(x) {
+      weightedRandom(function(x) {
         return Math.pow(Math.E, -24 * Math.pow(x - 0.5, 2));
       }) *
         2 -
@@ -442,10 +640,16 @@
     );
   }
 
-  function bezmh(P, w) {
+  /**
+   * Creates a Bezier curve through a series of points.
+   * @param {number[][]} P - The control points.
+   * @param {number} w - The weight of the curve.
+   * @returns {number[][]} The points of the Bezier curve.
+   */
+  function createBezierCurve(P, w) {
     w = w == undefined ? 1 : w;
     if (P.length == 2) {
-      P = [P[0], PolyTools.midPt(P[0], P[1]), P[1]];
+      P = [P[0], PolyTools.calculateMidpoint(P[0], P[1]), P[1]];
     }
     var plist = [];
     for (var j = 0; j < P.length - 2; j++) {
@@ -455,13 +659,13 @@
       if (j == 0) {
         p0 = P[j];
       } else {
-        p0 = PolyTools.midPt(P[j], P[j + 1]);
+        p0 = PolyTools.calculateMidpoint(P[j], P[j + 1]);
       }
       p1 = P[j + 1];
       if (j == P.length - 3) {
         p2 = P[j + 2];
       } else {
-        p2 = PolyTools.midPt(P[j + 1], P[j + 2]);
+        p2 = PolyTools.calculateMidpoint(P[j + 1], P[j + 2]);
       }
       var pl = 20;
       for (var i = 0; i < pl + (j == P.length - 3); i += 1) {
@@ -482,7 +686,13 @@
     return plist;
   }
 
-  function poly(plist, args) {
+  /**
+   * Creates an SVG polyline element.
+   * @param {number[][]} plist - The points of the polyline.
+   * @param {object} args - Optional arguments.
+   * @returns {string} The SVG polyline element as a string.
+   */
+  function createPolyline(plist, args) {
     var args = args != undefined ? args : {};
     var xof = args.xof != undefined ? args.xof : 0;
     var yof = args.yof != undefined ? args.yof : 0;
@@ -513,6 +723,12 @@
 <script>
   console.log("************************************************");
 
+  /**
+   * Draws a stroke with a given set of points.
+   * @param {number[][]} ptlist - The list of points for the stroke.
+   * @param {object} args - Optional arguments.
+   * @returns {string} The SVG string for the stroke.
+   */
   function stroke(ptlist, args) {
     var args = args != undefined ? args : {};
     var xof = args.xof != undefined ? args.xof : 0;
@@ -566,7 +782,7 @@
       )
       .concat([ptlist[0]]);
 
-    var canv = poly(
+    var canv = createPolyline(
       vtxlist.map(function(x) {
         return [x[0] + xof, x[1] + yof];
       }),
@@ -575,6 +791,13 @@
     return canv;
   }
 
+  /**
+   * Draws a blob-like shape.
+   * @param {number} x - The x-coordinate of the blob's center.
+   * @param {number} y - The y-coordinate of the blob's center.
+   * @param {object} args - Optional arguments.
+   * @returns {string|number[][]} The SVG string for the blob or the list of points.
+   */
   function blob(x, y, args) {
     var args = args != undefined ? args : {};
     var len = args.len != undefined ? args.len : 20;
@@ -618,13 +841,19 @@
     }
 
     if (ret == 0) {
-      return poly(plist, { fil: col, str: col, wid: 0 });
+      return createPolyline(plist, { fil: col, str: col, wid: 0 });
     } else {
       return plist;
     }
   }
 
-  function div(plist, reso) {
+  /**
+   * Subdivides a list of points to create a smoother curve.
+   * @param {number[][]} plist - The list of points to subdivide.
+   * @param {number} reso - The resolution of the subdivision.
+   * @returns {number[][]} The subdivided list of points.
+   */
+  function subdividePoints(plist, reso) {
     var tl = (plist.length - 1) * reso;
     var lx = 0;
     var ly = 0;
@@ -650,6 +879,12 @@
     return rlist;
   }
 
+  /**
+   * Applies a texture to a set of points.
+   * @param {number[][][]} ptlist - The list of points to texture.
+   * @param {object} args - Optional arguments.
+   * @returns {string|number[][][]} The SVG string for the texture or the list of texture points.
+   */
   var texture = function(ptlist, args) {
     var args = args != undefined ? args : {};
     var xof = args.xof != undefined ? args.xof : 0;
@@ -741,7 +976,14 @@
   };
 
   var Tree = new function() {
-    this.tree01 = function(x, y, args) {
+    /**
+     * Creates a conical tree.
+     * @param {number} x - The x-coordinate of the tree's base.
+     * @param {number} y - The y-coordinate of the tree's base.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createConicalTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 50;
       var wid = args.wid != undefined ? args.wid : 3;
@@ -796,11 +1038,18 @@
         line2.push([nx + (nslist[i][1] - 0.5) * wid + wid / 2, ny]);
       }
       canv +=
-        poly(line1, { fil: "none", str: col, wid: 1.5 }) +
-        poly(line2, { fil: "none", str: col, wid: 1.5 });
+        createPolyline(line1, { fil: "none", str: col, wid: 1.5 }) +
+        createPolyline(line2, { fil: "none", str: col, wid: 1.5 });
       return canv;
     };
-    this.tree02 = function(x, y, args) {
+    /**
+     * Creates a bushy tree or shrub.
+     * @param {number} x - The x-coordinate of the tree's center.
+     * @param {number} y - The y-coordinate of the tree's center.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createBushyTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 16;
       var wid = args.wid != undefined ? args.wid : 8;
@@ -839,7 +1088,14 @@
       }
       return canv;
     };
-    this.tree03 = function(x, y, args) {
+    /**
+     * Creates a tree with a bent trunk.
+     * @param {number} x - The x-coordinate of the tree's base.
+     * @param {number} y - The y-coordinate of the tree's base.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createBentTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 50;
       var wid = args.wid != undefined ? args.wid : 5;
@@ -911,7 +1167,7 @@
         ]);
       }
       var lc = line1.concat(line2.reverse());
-      canv += poly(lc, { fil: "white", str: col, wid: 1.5 });
+      canv += createPolyline(lc, { fil: "white", str: col, wid: 1.5 });
       canv += blobs;
       return canv;
     };
@@ -1188,7 +1444,14 @@
       return canv;
     };
 
-    this.tree04 = function(x, y, args) {
+    /**
+     * Creates a complex tree with branches and twigs.
+     * @param {number} x - The x-coordinate of the tree's base.
+     * @param {number} y - The y-coordinate of the tree's base.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createComplexTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 300;
       var wid = args.wid != undefined ? args.wid : 6;
@@ -1251,7 +1514,7 @@
           trmlist.push(trlist[i]);
         }
       }
-      canv += poly(trmlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
+      canv += createPolyline(trmlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
 
       trmlist.splice(0, 1);
       trmlist.splice(trmlist.length - 1, 1);
@@ -1276,7 +1539,14 @@
       return canv;
     };
 
-    this.tree05 = function(x, y, args) {
+    /**
+     * Creates a deciduous-style tree.
+     * @param {number} x - The x-coordinate of the tree's base.
+     * @param {number} y - The y-coordinate of the tree's base.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createDeciduousTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 300;
       var wid = args.wid != undefined ? args.wid : 5;
@@ -1346,7 +1616,7 @@
         }
       }
 
-      canv += poly(trmlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
+      canv += createPolyline(trmlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
 
       trmlist.splice(0, 1);
       trmlist.splice(trmlist.length - 1, 1);
@@ -1371,7 +1641,14 @@
       return canv;
     };
 
-    this.tree06 = function(x, y, args) {
+    /**
+     * Creates a fractal tree.
+     * @param {number} x - The x-coordinate of the tree's base.
+     * @param {number} y - The y-coordinate of the tree's base.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createFractalTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 100;
       var wid = args.wid != undefined ? args.wid : 6;
@@ -1462,7 +1739,7 @@
         ben: 0,
       });
 
-      canv += poly(trmlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
+      canv += createPolyline(trmlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
 
       trmlist.splice(0, 1);
       trmlist.splice(trmlist.length - 1, 1);
@@ -1487,7 +1764,14 @@
       return canv;
     };
 
-    this.tree07 = function(x, y, args) {
+    /**
+     * Creates a tree made of triangulated blobs.
+     * @param {number} x - The x-coordinate of the tree's base.
+     * @param {number} y - The y-coordinate of the tree's base.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createTriangulatedTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 60;
       var wid = args.wid != undefined ? args.wid : 4;
@@ -1549,7 +1833,7 @@
               },
             );
 
-            //canv+=poly(bpl,{fil:col,wid:0})
+            //canv+=createPolyline(bpl,{fil:col,wid:0})
             T = T.concat(
               PolyTools.triangulate(bpl, {
                 area: 50,
@@ -1563,7 +1847,7 @@
         line2.push([nx + (nslist[i][1] - 0.5) * wid + wid / 2, ny]);
       }
 
-      //canv += poly(line1.concat(line2.reverse()),{fil:col,wid:0})
+      //canv += createPolyline(line1.concat(line2.reverse()),{fil:col,wid:0})
       T = PolyTools.triangulate(line1.concat(line2.reverse()), {
         area: 50,
         convex: true,
@@ -1571,15 +1855,22 @@
       }).concat(T);
 
       for (var k = 0; k < T.length; k++) {
-        var m = PolyTools.midPt(T[k]);
+        var m = PolyTools.calculateMidpoint(T[k]);
         var c = (Noise.noise(m[0] * 0.02, m[1] * 0.02) * 200 + 50) | 0;
         var co = "rgba(" + c + "," + c + "," + c + ",0.8)";
-        canv += poly(T[k], { fil: co, str: co, wid: 0 });
+        canv += createPolyline(T[k], { fil: co, str: co, wid: 0 });
       }
       return canv;
     };
 
-    this.tree08 = function(x, y, args) {
+    /**
+     * Creates a stylized fractal tree.
+     * @param {number} x - The x-coordinate of the tree's base.
+     * @param {number} y - The y-coordinate of the tree's base.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tree.
+     */
+    this.createStylizedFractalTree = function(x, y, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 80;
       var wid = args.wid != undefined ? args.wid : 1;
@@ -1590,7 +1881,7 @@
       var txcanv = "";
       var twcanv = "";
 
-      var ang = normRand(-1, 1) * Math.PI * 0.2;
+      var ang = randomInRange(-1, 1) * Math.PI * 0.2;
 
       var trlist = branch({
         hei: hei,
@@ -1631,7 +1922,7 @@
           },
         ]);
 
-        trmlist = div(trmlist, 10);
+        trmlist = subdividePoints(trmlist, 10);
 
         for (var i = 0; i < trmlist.length; i++) {
           trmlist[i][1] += bfun(i / trmlist.length) * 2;
@@ -1657,9 +1948,9 @@
                 ang +
                 ben +
                 Math.PI *
-                  randChoice([normRand(-1, 0.5), normRand(0.5, 1)]) *
+                  randChoice([randomInRange(-1, 0.5), randomInRange(0.5, 1)]) *
                   0.2,
-              len: len * normRand(0.8, 0.9),
+              len: len * randomInRange(0.8, 0.9),
               ben: nben,
             });
             tcanv += fracTree(ept[0], ept[1], dep - 1, {
@@ -1667,15 +1958,15 @@
                 ang +
                 ben +
                 Math.PI *
-                  randChoice([normRand(-1, -0.5), normRand(0.5, 1)]) *
+                  randChoice([randomInRange(-1, -0.5), randomInRange(0.5, 1)]) *
                   0.2,
-              len: len * normRand(0.8, 0.9),
+              len: len * randomInRange(0.8, 0.9),
               ben: nben,
             });
           } else {
             tcanv += fracTree(ept[0], ept[1], dep - 1, {
               ang: ang + ben,
-              len: len * normRand(0.8, 0.9),
+              len: len * randomInRange(0.8, 0.9),
               ben: nben,
             });
           }
@@ -1699,7 +1990,7 @@
         }
       }
 
-      canv += poly(trlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
+      canv += createPolyline(trlist, { xof: x, yof: y, fil: "white", str: col, wid: 0 });
 
       canv += stroke(
         trlist.map(function(v) {
@@ -1725,6 +2016,12 @@
   }();
 
   var Mount = new function() {
+    /**
+     * Generates the foot of a mountain.
+     * @param {number[][][]} ptlist - The list of points defining the mountain layers.
+     * @param {object} args - Optional arguments.
+     * @returns {string|number[][][]} The SVG string for the mountain foot or the list of points.
+     */
     var foot = function(ptlist, args) {
       var args = args != undefined ? args : {};
       var xof = args.xof != undefined ? args.xof : 0;
@@ -1777,7 +2074,7 @@
       }
       var canv = "";
       for (var i = 0; i < ftlist.length; i++) {
-        canv += poly(ftlist[i], {
+        canv += createPolyline(ftlist[i], {
           xof: xof,
           yof: yof,
           fil: "white",
@@ -1801,6 +2098,14 @@
       return ret ? ftlist : canv;
     };
 
+    /**
+     * Generates a mountain.
+     * @param {number} xoff - The x-offset for the mountain.
+     * @param {number} yoff - The y-offset for the mountain.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string|Array} The SVG string for the mountain or an array of points.
+     */
     this.mountain = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 100 + Math.random() * 400;
@@ -1853,7 +2158,7 @@
       //RIM
       vegetate(
         function(x, y) {
-          return Tree.tree02(x + xoff, y + yoff - 5, {
+          return Tree.createBushyTree(x + xoff, y + yoff - 5, {
             col:
               "rgba(100,100,100," +
               (Noise.noise(0.01 * x, 0.01 * y) * 0.5 * 0.3 + 0.5).toFixed(3) +
@@ -1873,7 +2178,7 @@
       );
 
       //WHITE BG
-      canv += poly(ptlist[0].concat([[0, reso[0] * 4]]), {
+      canv += createPolyline(ptlist[0].concat([[0, reso[0] * 4]]), {
         xof: xoff,
         yof: yoff,
         fil: "white",
@@ -1899,7 +2204,7 @@
       //TOP
       vegetate(
         function(x, y) {
-          return Tree.tree02(x + xoff, y + yoff, {
+          return Tree.createBushyTree(x + xoff, y + yoff, {
             col:
               "rgba(100,100,100," +
               (Noise.noise(0.01 * x, 0.01 * y) * 0.5 * 0.3 + 0.5).toFixed(3) +
@@ -1921,7 +2226,7 @@
           function(x, y) {
             var ht = ((h + y) / h) * 70;
             ht = ht * 0.3 + Math.random() * ht * 0.7;
-            return Tree.tree01(x + xoff, y + yoff, {
+            return Tree.createConicalTree(x + xoff, y + yoff, {
               hei: ht,
               wid: Math.random() * 3 + 1,
               col:
@@ -1964,7 +2269,7 @@
             ht = ht * 0.5 + Math.random() * ht * 0.5;
             var bc = Math.random() * 0.1;
             var bp = 1;
-            return Tree.tree03(x + xoff, y + yoff, {
+            return Tree.createBentTree(x + xoff, y + yoff, {
               hei: ht,
               ben: function(x) {
                 return Math.pow(x * bc, bp);
@@ -2080,6 +2385,14 @@
       }
     };
 
+    /**
+     * Generates a flat-topped mountain.
+     * @param {number} xoff - The x-offset for the mountain.
+     * @param {number} yoff - The y-offset for the mountain.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the mountain.
+     */
     this.flatMount = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 40 + Math.random() * 400;
@@ -2125,7 +2438,7 @@
       }
 
       //WHITE BG
-      canv += poly(ptlist[0].concat([[0, reso[0] * 4]]), {
+      canv += createPolyline(ptlist[0].concat([[0, reso[0] * 4]]), {
         xof: xoff,
         yof: yoff,
         fil: "white",
@@ -2180,8 +2493,8 @@
       }
 
       var d = 5;
-      grlist1 = div(grlist1, d);
-      grlist2 = div(grlist2, d);
+      grlist1 = subdividePoints(grlist1, d);
+      grlist2 = subdividePoints(grlist2, d);
 
       var grlist = grlist1.reverse().concat(grlist2.concat([grlist1[0]]));
       for (var i = 0; i < grlist.length; i++) {
@@ -2189,10 +2502,10 @@
         grlist[i][0] *= 1 - v + Noise.noise(grlist[i][1] * 0.5) * v;
       }
       /*       for (var i = 0; i < ptlist.length; i++){
-        canv += poly(ptlist[i],{xof:xoff,yof:yoff,str:"red",fil:"none",wid:2})
+        canv += createPolyline(ptlist[i],{xof:xoff,yof:yoff,str:"red",fil:"none",wid:2})
       }
  */
-      canv += poly(grlist, {
+      canv += createPolyline(grlist, {
         xof: xoff,
         yof: yoff,
         str: "none",
@@ -2231,6 +2544,13 @@
       return canv;
     };
 
+    /**
+     * Adds decorative elements to a flat-topped mountain.
+     * @param {number} xoff - The x-offset for the decoration.
+     * @param {number} yoff - The y-offset for the decoration.
+     * @param {object} grbd - The bounds of the flat area.
+     * @returns {string} The SVG string for the decorations.
+     */
     this.flatDec = function(xoff, yoff, grbd) {
       var canv = "";
 
@@ -2249,11 +2569,11 @@
         );
       }
       for (var j = 0; j < randChoice([0, 0, 1, 2]); j++) {
-        var xr = xoff + normRand(grbd.xmin, grbd.xmax);
-        var yr = yoff + (grbd.ymin + grbd.ymax) / 2 + normRand(-5, 5) + 20;
+        var xr = xoff + randomInRange(grbd.xmin, grbd.xmax);
+        var yr = yoff + (grbd.ymin + grbd.ymax) / 2 + randomInRange(-5, 5) + 20;
         for (var k = 0; k < 2 + Math.random() * 3; k++) {
-          canv += Tree.tree08(
-            xr + Math.min(Math.max(normRand(-30, 30), grbd.xmin), grbd.xmax),
+          canv += Tree.createStylizedFractalTree(
+            xr + Math.min(Math.max(randomInRange(-30, 30), grbd.xmin), grbd.xmax),
             yr,
             { hei: 60 + Math.random() * 40 },
           );
@@ -2280,8 +2600,8 @@
         var xmin = grbd.xmin * (1 - pmin) + grbd.xmax * pmin;
         var xmax = grbd.xmin * (1 - pmax) + grbd.xmax * pmax;
         for (var i = xmin; i < xmax; i += 30) {
-          canv += Tree.tree05(
-            xoff + i + 20 * normRand(-1, 1),
+          canv += Tree.createDeciduousTree(
+            xoff + i + 20 * randomInRange(-1, 1),
             yoff + (grbd.ymin + grbd.ymax) / 2 + 20,
             { hei: 100 + Math.random() * 200 },
           );
@@ -2300,17 +2620,17 @@
         }
       } else if (tt == 2) {
         for (var i = 0; i < randChoice([1, 1, 1, 1, 2, 2, 3]); i++) {
-          var xr = normRand(grbd.xmin, grbd.xmax);
+          var xr = randomInRange(grbd.xmin, grbd.xmax);
           var yr = (grbd.ymin + grbd.ymax) / 2;
-          canv += Tree.tree04(xoff + xr, yoff + yr + 20, {});
+          canv += Tree.createComplexTree(xoff + xr, yoff + yr + 20, {});
           for (var j = 0; j < Math.random() * 2; j++) {
             canv += Mount.rock(
               xoff +
                 Math.max(
                   grbd.xmin,
-                  Math.min(grbd.xmax, xr + normRand(-50, 50)),
+                  Math.min(grbd.xmax, xr + randomInRange(-50, 50)),
                 ),
-              yoff + yr + normRand(-5, 5) + 20,
+              yoff + yr + randomInRange(-5, 5) + 20,
               j * i * Math.random() * 100,
               {
                 wid: 50 + Math.random() * 20,
@@ -2322,8 +2642,8 @@
         }
       } else if (tt == 3) {
         for (var i = 0; i < randChoice([1, 1, 1, 1, 2, 2, 3]); i++) {
-          canv += Tree.tree06(
-            xoff + normRand(grbd.xmin, grbd.xmax),
+          canv += Tree.createFractalTree(
+            xoff + randomInRange(grbd.xmin, grbd.xmax),
             yoff + (grbd.ymin + grbd.ymax) / 2,
             { hei: 60 + Math.random() * 60 },
           );
@@ -2334,30 +2654,30 @@
         var xmin = grbd.xmin * (1 - pmin) + grbd.xmax * pmin;
         var xmax = grbd.xmin * (1 - pmax) + grbd.xmax * pmax;
         for (var i = xmin; i < xmax; i += 20) {
-          canv += Tree.tree07(
-            xoff + i + 20 * normRand(-1, 1),
-            yoff + (grbd.ymin + grbd.ymax) / 2 + normRand(-1, 1) + 0,
-            { hei: normRand(40, 80) },
+          canv += Tree.createTriangulatedTree(
+            xoff + i + 20 * randomInRange(-1, 1),
+            yoff + (grbd.ymin + grbd.ymax) / 2 + randomInRange(-1, 1) + 0,
+            { hei: randomInRange(40, 80) },
           );
         }
       }
 
       for (var i = 0; i < 50 * Math.random(); i++) {
-        canv += Tree.tree02(
-          xoff + normRand(grbd.xmin, grbd.xmax),
-          yoff + normRand(grbd.ymin, grbd.ymax),
+        canv += Tree.createBushyTree(
+          xoff + randomInRange(grbd.xmin, grbd.xmax),
+          yoff + randomInRange(grbd.ymin, grbd.ymax),
         );
       }
 
       var ts = randChoice([0, 0, 0, 0, 1]);
       if (ts == 1 && tt != 4) {
         canv += Arch.arch01(
-          xoff + normRand(grbd.xmin, grbd.xmax),
+          xoff + randomInRange(grbd.xmin, grbd.xmax),
           yoff + (grbd.ymin + grbd.ymax) / 2 + 20,
           Math.random(),
           {
-            wid: normRand(160, 200),
-            hei: normRand(80, 100),
+            wid: randomInRange(160, 200),
+            hei: randomInRange(80, 100),
             per: Math.random(),
           },
         );
@@ -2366,6 +2686,14 @@
       return canv;
     };
 
+    /**
+     * Generates a distant mountain range.
+     * @param {number} xoff - The x-offset for the mountains.
+     * @param {number} yoff - The y-offset for the mountains.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the mountains.
+     */
     this.distMount = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 300;
@@ -2410,7 +2738,7 @@
           var c = (Noise.noise(x * 0.02, y * 0.02, yoff) * 55 + 200) | 0;
           return "rgb(" + c + "," + c + "," + c + ")";
         };
-        canv += poly(ptlist[i], {
+        canv += createPolyline(ptlist[i], {
           fil: getCol(...ptlist[i][ptlist[i].length - 1]),
           str: "none",
           wid: 1,
@@ -2422,14 +2750,22 @@
           optimize: false,
         });
         for (var k = 0; k < T.length; k++) {
-          var m = PolyTools.midPt(T[k]);
+          var m = PolyTools.calculateMidpoint(T[k]);
           var co = getCol(m[0], m[1]);
-          canv += poly(T[k], { fil: co, str: co, wid: 1 });
+          canv += createPolyline(T[k], { fil: co, str: co, wid: 1 });
         }
       }
       return canv;
     };
 
+    /**
+     * Generates a rock.
+     * @param {number} xoff - The x-offset for the rock.
+     * @param {number} yoff - The y-offset for the rock.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the rock.
+     */
     this.rock = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 80;
@@ -2482,7 +2818,7 @@
       }
 
       //WHITE BG
-      canv += poly(ptlist[0].concat([[0, 0]]), {
+      canv += createPolyline(ptlist[0].concat([[0, 0]]), {
         xof: xoff,
         yof: yoff,
         fil: "white",
@@ -2516,13 +2852,19 @@
       });
 
       for (var i = 0; i < reso[0]; i++) {
-        //canv += poly(ptlist[i],{xof:xoff,yof:yoff,fil:"none",str:"red",wid:2})
+        //canv += createPolyline(ptlist[i],{xof:xoff,yof:yoff,fil:"none",str:"red",wid:2})
       }
       return canv;
     };
   }();
 
   var Arch = new function() {
+    /**
+     * Flips a list of points horizontally around a given axis.
+     * @param {number[][]} ptlist - The list of points to flip.
+     * @param {number} axis - The axis to flip around.
+     * @returns {number[][]} The flipped list of points.
+     */
     var flip = function(ptlist, axis) {
       axis = axis == undefined ? 0 : axis;
       for (var i = 0; i < ptlist.length; i++) {
@@ -2539,6 +2881,13 @@
       return ptlist;
     };
 
+    /**
+     * Creates a hut-like structure.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the hut.
+     */
     var hut = function(xoff, yoff, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 40;
@@ -2559,20 +2908,20 @@
         }
       }
       var canv = "";
-      canv += poly(
+      canv += createPolyline(
         ptlist[0]
           .slice(0, -1)
           .concat(ptlist[ptlist.length - 1].slice(0, -1).reverse()),
         { xof: xoff, yof: yoff, fil: "white", str: "none" },
       );
-      canv += poly(ptlist[0], {
+      canv += createPolyline(ptlist[0], {
         xof: xoff,
         yof: yoff,
         fil: "none",
         str: "rgba(100,100,100,0.3)",
         wid: 2,
       });
-      canv += poly(ptlist[ptlist.length - 1], {
+      canv += createPolyline(ptlist[ptlist.length - 1], {
         xof: xoff,
         yof: yoff,
         fil: "none",
@@ -2592,7 +2941,7 @@
           );
         },
         dis: function() {
-          return wtrand(a => a * a);
+          return weightedRandom(a => a * a);
         },
         noi: function(x) {
           return 5;
@@ -2600,12 +2949,19 @@
       });
 
       for (var i = 0; i < reso[0]; i++) {
-        //canv += poly(ptlist[i],{xof:xoff,yof:yoff,fil:"none",str:"red",wid:2})
+        //canv += createPolyline(ptlist[i],{xof:xoff,yof:yoff,fil:"none",str:"red",wid:2})
       }
 
       return canv;
     };
 
+    /**
+     * Creates a box-like structure.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the box.
+     */
     var box = function(xoff, yoff, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 20;
@@ -2625,19 +2981,19 @@
       var mid = -wid * 0.5 + wid * rot;
       var bmid = -wid * 0.5 + wid * (1 - rot);
       var ptlist = [];
-      ptlist.push(div([[-wid * 0.5, -hei], [-wid * 0.5, 0]], 5));
-      ptlist.push(div([[wid * 0.5, -hei], [wid * 0.5, 0]], 5));
+      ptlist.push(subdividePoints([[-wid * 0.5, -hei], [-wid * 0.5, 0]], 5));
+      ptlist.push(subdividePoints([[wid * 0.5, -hei], [wid * 0.5, 0]], 5));
       if (bot) {
-        ptlist.push(div([[-wid * 0.5, 0], [mid, per]], 5));
-        ptlist.push(div([[wid * 0.5, 0], [mid, per]], 5));
+        ptlist.push(subdividePoints([[-wid * 0.5, 0], [mid, per]], 5));
+        ptlist.push(subdividePoints([[wid * 0.5, 0], [mid, per]], 5));
       }
-      ptlist.push(div([[mid, -hei], [mid, per]], 5));
+      ptlist.push(subdividePoints([[mid, -hei], [mid, per]], 5));
       if (tra) {
         if (bot) {
-          ptlist.push(div([[-wid * 0.5, 0], [bmid, -per]], 5));
-          ptlist.push(div([[wid * 0.5, 0], [bmid, -per]], 5));
+          ptlist.push(subdividePoints([[-wid * 0.5, 0], [bmid, -per]], 5));
+          ptlist.push(subdividePoints([[wid * 0.5, 0], [bmid, -per]], 5));
         }
-        ptlist.push(div([[bmid, -hei], [bmid, -per]], 5));
+        ptlist.push(subdividePoints([[bmid, -hei], [bmid, -per]], 5));
       }
 
       var surf = (rot < 0.5) * 2 - 1;
@@ -2660,7 +3016,7 @@
 
       var canv = "";
       if (!tra) {
-        canv += poly(polist, {
+        canv += createPolyline(polist, {
           xof: xoff,
           yof: yoff,
           str: "none",
@@ -2686,6 +3042,12 @@
       return canv;
     };
 
+    /**
+     * Creates decorative patterns for structures.
+     * @param {number} style - The style of decoration.
+     * @param {object} args - Optional arguments.
+     * @returns {number[][][]} A list of polylines for the decoration.
+     */
     var deco = function(style, args) {
       var args = args != undefined ? args : {};
       var pul = args.pul != undefined ? args.pul : [0, 0];
@@ -2696,10 +3058,10 @@
       var vsp = args.vsp != undefined ? args.vsp : [1, 2];
 
       var plist = [];
-      var dl = div([pul, pdl], vsp[1]);
-      var dr = div([pur, pdr], vsp[1]);
-      var du = div([pul, pur], hsp[1]);
-      var dd = div([pdl, pdr], hsp[1]);
+      var dl = subdividePoints([pul, pdl], vsp[1]);
+      var dr = subdividePoints([pur, pdr], vsp[1]);
+      var du = subdividePoints([pul, pur], hsp[1]);
+      var dd = subdividePoints([pdl, pdr], hsp[1]);
 
       if (style == 1) {
         //-| |-
@@ -2709,22 +3071,22 @@
         var mrd = dd[du.length - 1 - hsp[0]];
 
         for (var i = vsp[0]; i < dl.length - vsp[0]; i += vsp[0]) {
-          var mml = div([mlu, mld], vsp[1])[i];
-          var mmr = div([mru, mrd], vsp[1])[i];
+          var mml = subdividePoints([mlu, mld], vsp[1])[i];
+          var mmr = subdividePoints([mru, mrd], vsp[1])[i];
           var ml = dl[i];
           var mr = dr[i];
-          plist.push(div([mml, ml], 5));
-          plist.push(div([mmr, mr], 5));
+          plist.push(subdividePoints([mml, ml], 5));
+          plist.push(subdividePoints([mmr, mr], 5));
         }
-        plist.push(div([mlu, mld], 5));
-        plist.push(div([mru, mrd], 5));
+        plist.push(subdividePoints([mlu, mld], 5));
+        plist.push(subdividePoints([mru, mrd], 5));
       } else if (style == 2) {
         //||||
 
         for (var i = hsp[0]; i < du.length - hsp[0]; i += hsp[0]) {
           var mu = du[i];
           var md = dd[i];
-          plist.push(div([mu, md], 5));
+          plist.push(subdividePoints([mu, md], 5));
         }
       } else if (style == 3) {
         //|##|
@@ -2734,22 +3096,30 @@
         var mrd = dd[du.length - 1 - hsp[0]];
 
         for (var i = vsp[0]; i < dl.length - vsp[0]; i += vsp[0]) {
-          var mml = div([mlu, mld], vsp[1])[i];
-          var mmr = div([mru, mrd], vsp[1])[i];
-          var mmu = div([mlu, mru], vsp[1])[i];
-          var mmd = div([mld, mrd], vsp[1])[i];
+          var mml = subdividePoints([mlu, mld], vsp[1])[i];
+          var mmr = subdividePoints([mru, mrd], vsp[1])[i];
+          var mmu = subdividePoints([mlu, mru], vsp[1])[i];
+          var mmd = subdividePoints([mld, mrd], vsp[1])[i];
 
           var ml = dl[i];
           var mr = dr[i];
-          plist.push(div([mml, mmr], 5));
-          plist.push(div([mmu, mmd], 5));
+          plist.push(subdividePoints([mml, mmr], 5));
+          plist.push(subdividePoints([mmu, mmd], 5));
         }
-        plist.push(div([mlu, mld], 5));
-        plist.push(div([mru, mrd], 5));
+        plist.push(subdividePoints([mlu, mld], 5));
+        plist.push(subdividePoints([mru, mrd], 5));
       }
       return plist;
     };
 
+    /**
+     * Creates railings for structures.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the railings.
+     */
     var rail = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 20;
@@ -2768,20 +3138,20 @@
       var ptlist = [];
 
       if (fro) {
-        ptlist.push(div([[-wid * 0.5, 0], [mid, per]], seg));
-        ptlist.push(div([[mid, per], [wid * 0.5, 0]], seg));
+        ptlist.push(subdividePoints([[-wid * 0.5, 0], [mid, per]], seg));
+        ptlist.push(subdividePoints([[mid, per], [wid * 0.5, 0]], seg));
       }
       if (tra) {
-        ptlist.push(div([[-wid * 0.5, 0], [bmid, -per]], seg));
-        ptlist.push(div([[bmid, -per], [wid * 0.5, 0]], seg));
+        ptlist.push(subdividePoints([[-wid * 0.5, 0], [bmid, -per]], seg));
+        ptlist.push(subdividePoints([[bmid, -per], [wid * 0.5, 0]], seg));
       }
       if (fro) {
-        ptlist.push(div([[-wid * 0.5, -hei], [mid, -hei + per]], seg));
-        ptlist.push(div([[mid, -hei + per], [wid * 0.5, -hei]], seg));
+        ptlist.push(subdividePoints([[-wid * 0.5, -hei], [mid, -hei + per]], seg));
+        ptlist.push(subdividePoints([[mid, -hei + per], [wid * 0.5, -hei]], seg));
       }
       if (tra) {
-        ptlist.push(div([[-wid * 0.5, -hei], [bmid, -hei - per]], seg));
-        ptlist.push(div([[bmid, -hei - per], [wid * 0.5, -hei]], seg));
+        ptlist.push(subdividePoints([[-wid * 0.5, -hei], [bmid, -hei - per]], seg));
+        ptlist.push(subdividePoints([[bmid, -hei - per], [wid * 0.5, -hei]], seg));
       }
       if (tra) {
         var open = Math.floor(Math.random() * ptlist.length);
@@ -2794,12 +3164,12 @@
 
       for (var i = 0; i < ptlist.length / 2; i++) {
         for (var j = 0; j < ptlist[i].length; j++) {
-          //ptlist.push(div([ptlist[i][j],ptlist[4+i][j]],2))
+          //ptlist.push(subdividePoints([ptlist[i][j],ptlist[4+i][j]],2))
           ptlist[i][j][1] += (Noise.noise(i, j * 0.5, seed) - 0.5) * hei;
           ptlist[(ptlist.length / 2 + i) % ptlist.length][
             j % ptlist[(ptlist.length / 2 + i) % ptlist.length].length
           ][1] += (Noise.noise(i + 0.5, j * 0.5, seed) - 0.5) * hei;
-          var ln = div(
+          var ln = subdividePoints(
             [
               ptlist[i][j],
               ptlist[(ptlist.length / 2 + i) % ptlist.length][
@@ -2809,7 +3179,7 @@
             2,
           );
           ln[0][0] += (Math.random() - 0.5) * hei * 0.5;
-          canv += poly(ln, {
+          canv += createPolyline(ln, {
             xof: xoff,
             yof: yoff,
             fil: "none",
@@ -2837,6 +3207,13 @@
       return canv;
     };
 
+    /**
+     * Creates a roof for a structure.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the roof.
+     */
     var roof = function(xoff, yoff, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 20;
@@ -2862,7 +3239,7 @@
 
       var ptlist = [];
       ptlist.push(
-        div(
+        subdividePoints(
           opf([
             [-wid * 0.5 + quat, -hei - per / 2],
             [-wid * 0.5 + quat * 0.5, -hei / 2 - per / 4],
@@ -2872,7 +3249,7 @@
         ),
       );
       ptlist.push(
-        div(
+        subdividePoints(
           opf([
             [mid + quat, -hei],
             [(mid + quat + wid * 0.5) / 2, -hei / 2],
@@ -2882,7 +3259,7 @@
         ),
       );
       ptlist.push(
-        div(
+        subdividePoints(
           opf([
             [mid + quat, -hei],
             [mid + quat / 2, -hei / 2 + per / 2],
@@ -2892,11 +3269,11 @@
         ),
       );
 
-      ptlist.push(div(opf([[-wid * 0.5 - cor, 0], [mid + cor, per]]), 5));
-      ptlist.push(div(opf([[wid * 0.5 + cor, 0], [mid + cor, per]]), 5));
+      ptlist.push(subdividePoints(opf([[-wid * 0.5 - cor, 0], [mid + cor, per]]), 5));
+      ptlist.push(subdividePoints(opf([[wid * 0.5 + cor, 0], [mid + cor, per]]), 5));
 
       ptlist.push(
-        div(opf([[-wid * 0.5 + quat, -hei - per / 2], [mid + quat, -hei]]), 5),
+        subdividePoints(opf([[-wid * 0.5 + quat, -hei - per / 2], [mid + quat, -hei]]), 5),
       );
 
       var canv = "";
@@ -2908,7 +3285,7 @@
         [wid * 0.5, 0],
         [mid, per],
       ]);
-      canv += poly(polist, { xof: xoff, yof: yoff, str: "none", fil: "white" });
+      canv += createPolyline(polist, { xof: xoff, yof: yoff, str: "none", fil: "white" });
 
       for (var i = 0; i < ptlist.length; i++) {
         canv += stroke(
@@ -2934,7 +3311,7 @@
         if (pp[0][0] > pp[1][0]) {
           pp = [pp[1], pp[0]];
         }
-        var mp = PolyTools.midPt(pp);
+        var mp = PolyTools.calculateMidpoint(pp);
         var a = Math.atan2(pp[1][1] - pp[0][1], pp[1][0] - pp[0][0]);
         var adeg = (a * 180) / Math.PI;
         canv +=
@@ -2955,7 +3332,14 @@
       return canv;
     };
 
-    var pagroof = function(xoff, yoff, args) {
+    /**
+     * Creates a pagoda-style roof.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the roof.
+     */
+    var createPagodaRoof = function(xoff, yoff, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 20;
       var wid = args.wid != undefined ? args.wid : 120;
@@ -2979,10 +3363,10 @@
         polist.push([fxx, fy]);
       }
 
-      canv += poly(polist, { xof: xoff, yof: yoff, str: "none", fil: "white" });
+      canv += createPolyline(polist, { xof: xoff, yof: yoff, str: "none", fil: "white" });
       for (var i = 0; i < ptlist.length; i++) {
         canv += stroke(
-          div(ptlist[i], 5).map(function(x) {
+          subdividePoints(ptlist[i], 5).map(function(x) {
             return [x[0] + xoff, x[1] + yoff];
           }),
           {
@@ -2999,7 +3383,15 @@
       return canv;
     };
 
-    this.arch01 = function(xoff, yoff, seed, args) {
+    /**
+     * Creates an archway with a hut on top.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the archway.
+     */
+    this.createArchwayWithHut = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 70;
       var wid = args.wid != undefined ? args.wid : 180;
@@ -3032,16 +3424,16 @@
 
       var mcnt = randChoice([0, 1, 1, 2]);
       if (mcnt == 1) {
-        canv += Man.man(xoff + normRand(-wid / 3, wid / 3), yoff, {
+        canv += Man.man(xoff + randomInRange(-wid / 3, wid / 3), yoff, {
           fli: randChoice([true, false]),
           sca: 0.42,
         });
       } else if (mcnt == 2) {
-        canv += Man.man(xoff + normRand(-wid / 4, -wid / 5), yoff, {
+        canv += Man.man(xoff + randomInRange(-wid / 4, -wid / 5), yoff, {
           fli: false,
           sca: 0.42,
         });
-        canv += Man.man(xoff + normRand(wid / 5, wid / 4), yoff, {
+        canv += Man.man(xoff + randomInRange(wid / 5, wid / 4), yoff, {
           fli: true,
           sca: 0.42,
         });
@@ -3058,7 +3450,15 @@
       return canv;
     };
 
-    this.arch02 = function(xoff, yoff, seed, args) {
+    /**
+     * Creates a multi-story building.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the building.
+     */
+    this.createMultiStoryBuilding = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 10;
       var wid = args.wid != undefined ? args.wid : 50;
@@ -3117,7 +3517,15 @@
       }
       return canv;
     };
-    this.arch03 = function(xoff, yoff, seed, args) {
+    /**
+     * Creates a pagoda.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the pagoda.
+     */
+    this.createPagoda = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 10;
       var wid = args.wid != undefined ? args.wid : 50;
@@ -3150,7 +3558,7 @@
           wei: 0.5,
           tra: false,
         });
-        canv += pagroof(xoff, yoff - hoff - hei, {
+        canv += createPagodaRoof(xoff, yoff - hoff - hei, {
           hei: hei * 1.5,
           wid: wid * Math.pow(0.9, i),
           rot: rot,
@@ -3161,7 +3569,15 @@
       }
       return canv;
     };
-    this.arch04 = function(xoff, yoff, seed, args) {
+    /**
+     * Creates a simple pagoda.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the pagoda.
+     */
+    this.createSimplePagoda = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 15;
       var wid = args.wid != undefined ? args.wid : 30;
@@ -3194,7 +3610,7 @@
           wei: 0.5,
           tra: true,
         });
-        canv += pagroof(xoff, yoff - hoff - hei, {
+        canv += createPagodaRoof(xoff, yoff - hoff - hei, {
           hei: hei * 1,
           wid: wid * Math.pow(0.9, i),
           rot: rot,
@@ -3206,7 +3622,15 @@
       return canv;
     };
 
-    this.boat01 = function(xoff, yoff, seed, args) {
+    /**
+     * Creates a boat with a person on it.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the boat.
+     */
+    this.createBoat = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var len = args.len != undefined ? args.len : 120;
       var sca = args.sca != undefined ? args.sca : 1;
@@ -3235,7 +3659,7 @@
         plist2.push([i * dir, fun2(i / len)]);
       }
       var plist = plist1.concat(plist2.reverse());
-      canv += poly(plist, { xof: xoff, yof: yoff, fil: "white" });
+      canv += createPolyline(plist, { xof: xoff, yof: yoff, fil: "white" });
       canv += stroke(plist.map(v => [xoff + v[0], yoff + v[1]]), {
         wid: 1,
         fun: function(x) {
@@ -3247,7 +3671,15 @@
       return canv;
     };
 
-    this.transmissionTower01 = function(xoff, yoff, seed, args) {
+    /**
+     * Creates a transmission tower.
+     * @param {number} xoff - The x-offset.
+     * @param {number} yoff - The y-offset.
+     * @param {number} seed - The random seed.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the tower.
+     */
+    this.createTransmissionTower = function(xoff, yoff, seed, args) {
       var args = args != undefined ? args : {};
       var hei = args.hei != undefined ? args.hei : 100;
       var wid = args.wid != undefined ? args.wid : 20;
@@ -3258,7 +3690,7 @@
       };
 
       var quickstroke = function(pl) {
-        return stroke(div(pl, 5).map(toGlobal), {
+        return stroke(subdividePoints(pl, 5).map(toGlobal), {
           wid: 1,
           fun: x => 0.5,
           col: "rgba(100,100,100,0.4)",
@@ -3303,8 +3735,8 @@
         ]);
       }
 
-      var l10 = div([p00, p10, p20, p30], 5);
-      var l11 = div([p01, p11, p21, p31], 5);
+      var l10 = subdividePoints([p00, p10, p20, p30], 5);
+      var l11 = subdividePoints([p01, p11, p21, p31], 5);
 
       for (var i = 0; i < l10.length - 1; i++) {
         canv += quickstroke([l10[i], l11[i + 1]]);
@@ -3322,6 +3754,12 @@
   }();
 
   var Man = new function() {
+    /**
+     * Expands a polyline into a filled shape.
+     * @param {number[][]} ptlist - The list of points of the polyline.
+     * @param {function} wfun - A function that returns the width at a given point on the polyline.
+     * @returns {number[][][]} A pair of polylines representing the expanded shape.
+     */
     var expand = function(ptlist, wfun) {
       vtxlist0 = [];
       vtxlist1 = [];
@@ -3381,7 +3819,14 @@
       return [vtxlist0, vtxlist1];
     };
 
-    var tranpoly = function(p0, p1, ptlist) {
+    /**
+     * Transforms a polygon by scaling and rotating it.
+     * @param {number[]} p0 - The starting point of the transformation vector.
+     * @param {number[]} p1 - The ending point of the transformation vector.
+     * @param {number[][]} ptlist - The list of points to transform.
+     * @returns {number[][]} The transformed list of points.
+     */
+    var transformPolygon = function(p0, p1, ptlist) {
       var plist = ptlist.map(function(v) {
         return [-v[0], v[1]];
       });
@@ -3397,12 +3842,25 @@
       });
       return qlist;
     };
-    var flipper = function(plist) {
+
+    /**
+     * Flips a polygon horizontally.
+     * @param {number[][]} plist - The list of points to flip.
+     * @returns {number[][]} The flipped list of points.
+     */
+    var flipPolygon = function(plist) {
       return plist.map(function(v) {
         return [-v[0], v[1]];
       });
     };
 
+    /**
+     * Creates a hat of style 1.
+     * @param {number[]} p0 - The starting point for the hat.
+     * @param {number[]} p1 - The ending point for the hat.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the hat.
+     */
     this.hat01 = function(p0, p1, args) {
       var args = args != undefined ? args : {};
       var fli = args.fli != undefined ? args.fli : false;
@@ -3410,13 +3868,13 @@
       var canv = "";
       var seed = Math.random();
       var f = fli
-        ? flipper
+        ? flipPolygon
         : function(x) {
             return x;
           };
       //var plist = [[-0.5,0.5],[0.5,0.5],[0.5,1],[-0.5,2]]
-      canv += poly(
-        tranpoly(
+      canv += createPolyline(
+        transformPolygon(
           p0,
           p1,
           f([
@@ -3439,7 +3897,7 @@
           0.5 - i * 0.3,
         ]);
       }
-      canv += poly(tranpoly(p0, p1, f(qlist1)), {
+      canv += createPolyline(transformPolygon(p0, p1, f(qlist1)), {
         str: "rgba(100,100,100,0.8)",
         wid: 1,
       });
@@ -3447,6 +3905,13 @@
       return canv;
     };
 
+    /**
+     * Creates a hat of style 2.
+     * @param {number[]} p0 - The starting point for the hat.
+     * @param {number[]} p1 - The ending point for the hat.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the hat.
+     */
     this.hat02 = function(p0, p1, args) {
       var args = args != undefined ? args : {};
       var fli = args.fli != undefined ? args.fli : false;
@@ -3455,15 +3920,15 @@
       var seed = Math.random();
 
       var f = fli
-        ? flipper
+        ? flipPolygon
         : function(x) {
             return x;
           };
-      // canv += poly(tranpoly(p0,p1,[
+      // canv += createPolyline(transformPolygon(p0,p1,[
       //   [-0.3,0.6],[-0.15,1.0],[0,1.1],[0.15,1.0],[0.3,0.6]
       //   ]),{fil:"white",str:"rgba(130,130,130,0.8)",wid:1})
-      canv += poly(
-        tranpoly(
+      canv += createPolyline(
+        transformPolygon(
           p0,
           p1,
           f([
@@ -3484,6 +3949,13 @@
       return canv;
     };
 
+    /**
+     * Creates a stick for the figure to hold.
+     * @param {number[]} p0 - The starting point of the stick.
+     * @param {number[]} p1 - The ending point of the stick.
+     * @param {object} args - Optional arguments.
+     * @returns {string} The SVG string for the stick.
+     */
     this.stick01 = function(p0, p1, args) {
       var args = args != undefined ? args : {};
       var fli = args.fli != undefined ? args.fli : false;
@@ -3491,7 +3963,7 @@
       var canv = "";
       var seed = Math.random();
       var f = fli
-        ? flipper
+        ? flipPolygon
         : function(x) {
             return x;
           };
@@ -3504,7 +3976,7 @@
           0 + i * 0.3,
         ]);
       }
-      canv += poly(tranpoly(p0, p1, f(qlist1)), {
+      canv += createPolyline(transformPolygon(p0, p1, f(qlist1)), {
         str: "rgba(100,100,100,0.5)",
         wid: 1,
       });
@@ -3536,7 +4008,7 @@
           : [
               0,
               -Math.PI / 2,
-              normRand(0, 0),
+              randomInRange(0, 0),
               (Math.PI / 4) * Math.random(),
               ((Math.PI * 3) / 4) * Math.random(),
               (Math.PI * 3) / 4,
@@ -3600,15 +4072,15 @@
       for (var i = 1; i < pts.length; i++) {
         var par = gpar(sct, i);
         var p0 = gpos(sct, par[par.length - 2]);
-        var s = div([p0, pts[i]], 10);
+        var s = subdividePoints([p0, pts[i]], 10);
         //canv += stroke(s.map(toGlobal))
       }
 
       var cloth = function(plist, fun) {
         var canv = "";
-        var tlist = bezmh(plist, 2);
+        var tlist = createBezierCurve(plist, 2);
         var [tlist1, tlist2] = expand(tlist, fun);
-        canv += poly(tlist1.concat(tlist2.reverse()).map(toGlobal), {
+        canv += createPolyline(tlist1.concat(tlist2.reverse()).map(toGlobal), {
           fil: "white",
         });
         canv += stroke(tlist1.map(toGlobal), {
@@ -3650,11 +4122,11 @@
       canv += cloth([pts[1], pts[5], pts[6]], fsleeve);
       canv += cloth([pts[1], pts[2]], fhead);
 
-      var hlist = bezmh([pts[1], pts[2]], 2);
+      var hlist = createBezierCurve([pts[1], pts[2]], 2);
       var [hlist1, hlist2] = expand(hlist, fhead);
       hlist1.splice(0, Math.floor(hlist1.length * 0.1));
       hlist2.splice(0, Math.floor(hlist2.length * 0.95));
-      canv += poly(hlist1.concat(hlist2.reverse()).map(toGlobal), {
+      canv += createPolyline(hlist1.concat(hlist2.reverse()).map(toGlobal), {
         fil: "rgba(100,100,100,0.6)",
       });
 
@@ -3664,6 +4136,14 @@
     };
   }();
 
+  /**
+   * Generates water ripples.
+   * @param {number} xoff - The x-offset.
+   * @param {number} yoff - The y-offset.
+   * @param {number} seed - The random seed.
+   * @param {object} args - Optional arguments.
+   * @returns {string} The SVG string for the water.
+   */
   function water(xoff, yoff, seed, args) {
     var args = args != undefined ? args : {};
     var hei = args.hei != undefined ? args.hei : 2;
@@ -3703,7 +4183,13 @@
     return canv;
   }
 
-  function mountplanner(xmin, xmax) {
+  /**
+   * Plans the layout of the mountains in the scene.
+   * @param {number} xmin - The minimum x-coordinate.
+   * @param {number} xmax - The maximum x-coordinate.
+   * @returns {object[]} A list of planned mountain objects.
+   */
+  function planMountainLayout(xmin, xmax) {
     function locmax(x, y, f, r) {
       var z0 = f(x, y);
       if (z0 <= 0.3) {
@@ -3878,10 +4364,10 @@
 
       var plan;
       if (xmax > MEM.xmax - MEM.cwid) {
-        plan = mountplanner(MEM.xmax, MEM.xmax + MEM.cwid);
+        plan = planMountainLayout(MEM.xmax, MEM.xmax + MEM.cwid);
         MEM.xmax = MEM.xmax + MEM.cwid;
       } else {
-        plan = mountplanner(MEM.xmin - MEM.cwid, MEM.xmin);
+        plan = planMountainLayout(MEM.xmin - MEM.cwid, MEM.xmin);
         MEM.xmin = MEM.xmin - MEM.cwid;
       }
 
@@ -3931,7 +4417,7 @@
             tag: plan[i].tag,
             x: plan[i].x,
             y: plan[i].y,
-            canv: Arch.boat01(plan[i].x, plan[i].y, Math.random(), {
+            canv: Arch.createBoat(plan[i].x, plan[i].y, Math.random(), {
               sca: plan[i].y / 800,
               fli: randChoice([true, false]),
             }),
@@ -4056,7 +4542,7 @@
 </script>
 
 <script id="UI">
-  function xcroll(v) {
+  function scrollHorizontally(v) {
     MEM.cursx += v;
     if (needupdate()) {
       update();
@@ -4064,15 +4550,15 @@
       viewupdate();
     }
   }
-  function autoxcroll(v) {
+  function autoScroll(v) {
     if (document.getElementById("AUTO_SCROLL").checked) {
-      xcroll(v);
+      scrollHorizontally(v);
       setTimeout(function() {
-        autoxcroll(v);
+        autoScroll(v);
       }, 2000);
     }
   }
-  function rstyle(id, b) {
+  function setElementStyle(id, b) {
     var a = b ? 0.1 : 0.0;
     document
       .getElementById(id)
@@ -4124,7 +4610,7 @@
       setTimeout(present, 1);
     }
   }
-  function reloadWSeed(s) {
+  function reloadWithSeed(s) {
     var u = window.location.href.split("?")[0];
     window.location.href = u + "?seed=" + s;
     //window.location.reload(true)
@@ -4187,7 +4673,7 @@
           <td>
             <input title="random seed" id="INP_SEED" />
             <button
-              onclick="reloadWSeed(document.getElementById('INP_SEED').value)"
+              onclick="reloadWithSeed(document.getElementById('INP_SEED').value)"
             >
               Generate
             </button>
@@ -4200,7 +4686,7 @@
           <td>
             <button
               title="view left"
-              onclick="xcroll(-parseFloat(document.getElementById('INC_STEP').value))"
+              onclick="scrollHorizontally(-parseFloat(document.getElementById('INC_STEP').value))"
             >
               <
             </button>
@@ -4215,7 +4701,7 @@
             />
             <button
               title="view right"
-              onclick="xcroll(parseFloat(document.getElementById('INC_STEP').value))"
+              onclick="scrollHorizontally(parseFloat(document.getElementById('INC_STEP').value))"
             >
               >
             </button>
@@ -4225,7 +4711,7 @@
         <tr>
           <td>
             <pre><input id = "AUTO_SCROLL" type="checkbox" 
-            onchange="autoxcroll(parseFloat(document.getElementById('INC_STEP').value))">Auto-scroll</pre>
+            onchange="autoScroll(parseFloat(document.getElementById('INC_STEP').value))">Auto-scroll</pre>
           </td>
 
           <td></td>
@@ -4288,13 +4774,13 @@
       <td>
         <div
           id="L"
-          onmouseover="rstyle('L',true)"
-          onmouseout="rstyle('L',false)"
-          onclick="xcroll(-200)"
+          onmouseover="setElementStyle('L',true)"
+          onmouseout="setElementStyle('L',false)"
+          onclick="scrollHorizontally(-200)"
         >
           <div id="L.t"><font size="6px">&#x3008;</font></div>
           <script>
-            rstyle("L", false);
+            setElementStyle("L", false);
           </script>
         </div>
       </td>
@@ -4319,13 +4805,13 @@
       <td>
         <div
           id="R"
-          onmouseover="rstyle('R',true)"
-          onmouseout="rstyle('R',false)"
-          onclick="xcroll(200)"
+          onmouseover="setElementStyle('R',true)"
+          onmouseout="setElementStyle('R',false)"
+          onclick="scrollHorizontally(200)"
         >
           <div id="R.t"><font size="6px">&#x3009;</font></div>
           <script>
-            rstyle("R", false);
+            setElementStyle("R", false);
           </script>
         </div>
       </td>
