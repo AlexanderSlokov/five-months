@@ -31,7 +31,12 @@ impl TileCache {
     /// Renders `view` (its left edge snapped to the dot grid), reusing and
     /// filling the cache. Example: `cache.frame(&world, view, 3)`.
     pub fn frame(&mut self, world: &World, view: Viewport, ss: usize) -> DotImage {
-        self.adopt(Grid { scale: view.scale, top: view.top, dots_h: view.dots_h, ss });
+        self.adopt(Grid {
+            scale: view.scale,
+            top: view.top,
+            dots_h: view.dots_h,
+            ss,
+        });
         let x0 = (view.left / view.scale).round() as i64;
         let first = x0.div_euclid(TILE_W as i64);
         let last = (x0 + view.dots_w as i64 - 1).div_euclid(TILE_W as i64);
@@ -65,12 +70,21 @@ impl TileCache {
 
     fn tile_view(g: Grid, t: i64) -> Viewport {
         let left = (t * TILE_W as i64) as f64 * g.scale;
-        Viewport { left, top: g.top, scale: g.scale, dots_w: TILE_W, dots_h: g.dots_h }
+        Viewport {
+            left,
+            top: g.top,
+            scale: g.scale,
+            dots_w: TILE_W,
+            dots_h: g.dots_h,
+        }
     }
 
     fn render_missing(&mut self, world: &World, wanted: Vec<i64>) {
         let Some(g) = self.grid else { return };
-        let todo: Vec<i64> = wanted.into_iter().filter(|t| !self.tiles.contains_key(t)).collect();
+        let todo: Vec<i64> = wanted
+            .into_iter()
+            .filter(|t| !self.tiles.contains_key(t))
+            .collect();
         let rendered: Vec<(i64, DotImage)> = std::thread::scope(|s| {
             let handles: Vec<_> = todo
                 .iter()
@@ -90,7 +104,9 @@ impl TileCache {
     fn assemble(&self, x0: i64, w: usize, h: usize) -> DotImage {
         let mut rgb: Vec<Rgb> = vec![[1.0; 3]; w * h];
         for (c, gx) in (x0..x0 + w as i64).enumerate() {
-            let Some(tile) = self.tiles.get(&gx.div_euclid(TILE_W as i64)) else { continue };
+            let Some(tile) = self.tiles.get(&gx.div_euclid(TILE_W as i64)) else {
+                continue;
+            };
             let tx = gx.rem_euclid(TILE_W as i64) as usize;
             for y in 0..h.min(tile.h) {
                 rgb[y * w + c] = tile.at(tx, y);
@@ -116,7 +132,12 @@ mod tests {
         world.ensure(xmin - 2000.0, xmax + 2000.0);
         let direct = rasterize(world.polygons_in(xmin, xmax), v, 2);
         let cached = TileCache::default().frame(&world, v, 2);
-        let diff = direct.rgb.iter().zip(&cached.rgb).filter(|(a, b)| (a[0] - b[0]).abs() > 1e-3).count();
+        let diff = direct
+            .rgb
+            .iter()
+            .zip(&cached.rgb)
+            .filter(|(a, b)| (a[0] - b[0]).abs() > 1e-3)
+            .count();
         assert!(diff < direct.rgb.len() / 100, "{diff} dots differ");
     }
 

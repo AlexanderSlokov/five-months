@@ -36,7 +36,10 @@ fn on_bone(p0: Pt, p1: Pt, shape: &[Pt], fli: bool) -> Vec<Pt> {
         .map(|v| {
             let v = [sx * v[0], v[1]];
             let (d, a) = (v[0].hypot(v[1]), v[1].atan2(v[0]));
-            [p0[0] + d * scl * (ang + a).cos(), p0[1] + d * scl * (ang + a).sin()]
+            [
+                p0[0] + d * scl * (ang + a).cos(),
+                p0[1] + d * scl * (ang + a).sin(),
+            ]
         })
         .collect()
 }
@@ -46,16 +49,43 @@ impl Hat {
         let ink = Paint::ink(100, 0.8);
         match self {
             Self::Bamboo => {
-                let cap = [[-0.3, 0.5], [0.3, 0.8], [0.2, 1.0], [0.0, 1.1], [-0.3, 1.15], [-0.55, 1.0], [-0.65, 0.5]];
+                let cap = [
+                    [-0.3, 0.5],
+                    [0.3, 0.8],
+                    [0.2, 1.0],
+                    [0.0, 1.1],
+                    [-0.3, 1.15],
+                    [-0.55, 1.0],
+                    [-0.65, 0.5],
+                ];
                 sketch.poly(on_bone(neck, head, &cap, fli), PolyStyle::filled(ink));
                 let seed = chance.random();
                 let ribbon: Vec<Pt> = (0..10)
-                    .map(|i| [-0.3 - chance.noise2(i as f64 * 0.2, seed) * i as f64 * 0.1, 0.5 - i as f64 * 0.3])
+                    .map(|i| {
+                        [
+                            -0.3 - chance.noise2(i as f64 * 0.2, seed) * i as f64 * 0.1,
+                            0.5 - i as f64 * 0.3,
+                        ]
+                    })
                     .collect();
-                sketch.poly(on_bone(neck, head, &ribbon, fli), PolyStyle::outlined(ink, 1.0));
+                sketch.poly(
+                    on_bone(neck, head, &ribbon, fli),
+                    PolyStyle::outlined(ink, 1.0),
+                );
             }
             Self::Brim => {
-                let brim = [[-0.3, 0.5], [-1.1, 0.5], [-1.2, 0.6], [-1.1, 0.7], [-0.3, 0.8], [0.3, 0.8], [1.0, 0.7], [1.3, 0.6], [1.2, 0.5], [0.3, 0.5]];
+                let brim = [
+                    [-0.3, 0.5],
+                    [-1.1, 0.5],
+                    [-1.2, 0.6],
+                    [-1.1, 0.7],
+                    [-0.3, 0.8],
+                    [0.3, 0.8],
+                    [1.0, 0.7],
+                    [1.3, 0.6],
+                    [1.2, 0.5],
+                    [0.3, 0.5],
+                ];
                 sketch.poly(on_bone(neck, head, &brim, fli), PolyStyle::filled(ink));
             }
         }
@@ -72,10 +102,16 @@ impl Item {
         let pole: Vec<Pt> = (0..12)
             .map(|i| {
                 let t = i as f64;
-                [-chance.noise2(t * 0.1, seed) * 0.1 * (t / l * PI).sin() * 5.0, t * 0.3]
+                [
+                    -chance.noise2(t * 0.1, seed) * 0.1 * (t / l * PI).sin() * 5.0,
+                    t * 0.3,
+                ]
             })
             .collect();
-        sketch.poly(on_bone(hand, other, &pole, fli), PolyStyle::outlined(Paint::ink(100, 0.5), 1.0));
+        sketch.poly(
+            on_bone(hand, other, &pole, fli),
+            PolyStyle::outlined(Paint::ink(100, 0.5), 1.0),
+        );
     }
 }
 
@@ -86,7 +122,10 @@ mod tests {
     #[test]
     fn on_bone_maps_axis() {
         let pts = on_bone([0.0, 0.0], [0.0, -10.0], &[[0.0, 1.0]], false);
-        assert!((pts[0][0]).abs() < 1e-9 && (pts[0][1] + 10.0).abs() < 1e-9, "{pts:?}");
+        assert!(
+            (pts[0][0]).abs() < 1e-9 && (pts[0][1] + 10.0).abs() < 1e-9,
+            "{pts:?}"
+        );
     }
 
     #[test]

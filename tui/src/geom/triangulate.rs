@@ -32,7 +32,11 @@ fn best_ear(poly: &[Pt]) -> usize {
 }
 
 fn sides(t: &Tri) -> [f64; 3] {
-    [distance(t[0], t[1]), distance(t[1], t[2]), distance(t[2], t[0])]
+    [
+        distance(t[0], t[1]),
+        distance(t[1], t[2]),
+        distance(t[2], t[0]),
+    ]
 }
 
 fn area(t: &Tri) -> f64 {

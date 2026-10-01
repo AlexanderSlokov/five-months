@@ -15,7 +15,15 @@ const WID: f64 = 5.0;
 
 /// `ben(t)` bends the trunk sideways (×100) at relative height `t`.
 /// Example: `tree03(&mut sk, &mut ch, x, y, 80.0, &|t| t * 0.05, col)`.
-pub fn tree03(sketch: &mut Sketch, chance: &mut Chance, x: f64, y: f64, hei: f64, ben: &dyn Fn(f64) -> f64, col: Paint) {
+pub fn tree03(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    x: f64,
+    y: f64,
+    hei: f64,
+    ben: &dyn Fn(f64) -> f64,
+    col: Paint,
+) {
     let ns = noise_pairs(chance, RESO);
     let mut foliage = Sketch::new();
     let (mut line1, mut line2): (Vec<Pt>, Vec<Pt>) = (Vec::new(), Vec::new());
@@ -30,7 +38,14 @@ pub fn tree03(sketch: &mut Sketch, chance: &mut Chance, x: f64, y: f64, hei: f64
         line2.push([nx + ((n[1] - 0.5) * WID + WID / 2.0) * taper, ny]);
     }
     let trunk = joined_reversed(&line1, &line2);
-    sketch.poly(trunk, PolyStyle { fill: Paint::Paper, outline: col, width: 1.5 });
+    sketch.poly(
+        trunk,
+        PolyStyle {
+            fill: Paint::Paper,
+            outline: col,
+            width: 1.5,
+        },
+    );
     sketch.append(foliage);
 }
 
@@ -46,7 +61,13 @@ fn foliage_level(sketch: &mut Sketch, chance: &mut Chance, at: Pt, rest: usize, 
         let by = at[1] + (chance.random() - 0.5) * WID * 2.0;
         let wid = chance.random() * 6.0 + 3.0;
         let ang = (chance.random() - 0.5) * PI / 6.0;
-        let style = BlobStyle { len: ox * 2.0, wid, ang, col: leaf_paint(chance, col), ..Default::default() };
+        let style = BlobStyle {
+            len: ox * 2.0,
+            wid,
+            ang,
+            col: leaf_paint(chance, col),
+            ..Default::default()
+        };
         blob(sketch, chance, bx, by, &style);
     }
 }
@@ -58,7 +79,15 @@ mod tests {
     #[test]
     fn trunk_comes_first_and_hides() {
         let (mut s, mut c) = (Sketch::new(), Chance::from_seed(1));
-        tree03(&mut s, &mut c, 0.0, 0.0, 60.0, &|_| 0.0, Paint::ink(100, 0.4));
+        tree03(
+            &mut s,
+            &mut c,
+            0.0,
+            0.0,
+            60.0,
+            &|_| 0.0,
+            Paint::ink(100, 0.4),
+        );
         assert_eq!(s.polygons[0].style.fill, Paint::Paper);
         assert!(s.len() > 20);
     }
@@ -66,8 +95,20 @@ mod tests {
     #[test]
     fn bend_moves_the_top() {
         let (mut s, mut c) = (Sketch::new(), Chance::from_seed(2));
-        tree03(&mut s, &mut c, 0.0, 0.0, 60.0, &|t| t * 0.5, Paint::ink(100, 0.4));
-        let top = s.polygons[0].pts.iter().map(|p| p[0]).fold(f64::MIN, f64::max);
+        tree03(
+            &mut s,
+            &mut c,
+            0.0,
+            0.0,
+            60.0,
+            &|t| t * 0.5,
+            Paint::ink(100, 0.4),
+        );
+        let top = s.polygons[0]
+            .pts
+            .iter()
+            .map(|p| p[0])
+            .fold(f64::MIN, f64::max);
         assert!(top > 30.0, "top x {top}");
     }
 

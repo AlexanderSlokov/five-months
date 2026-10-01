@@ -26,7 +26,12 @@ use crate::ink::{Paint, PolyStyle, Sketch};
 /// Trunk wobble samples: `[noise(i/2), noise(i/2, 0.5)]` per level.
 fn noise_pairs(chance: &Chance, reso: usize) -> Vec<[f64; 2]> {
     (0..reso)
-        .map(|i| [chance.noise1(i as f64 * 0.5), chance.noise2(i as f64 * 0.5, 0.5)])
+        .map(|i| {
+            [
+                chance.noise1(i as f64 * 0.5),
+                chance.noise2(i as f64 * 0.5, 0.5),
+            ]
+        })
         .collect()
 }
 
@@ -44,12 +49,29 @@ fn sin_one(_t: f64) -> f64 {
 /// Paper-filled trunk silhouette plus its outline stroke. `pts` are
 /// relative to `(x, y)`; `trim` drops the first and last point from the
 /// stroke like `trmlist.splice(...)` does.
-fn ink_trunk(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, pts: &[Pt], alpha: f64, trim: bool) {
+fn ink_trunk(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    origin: Pt,
+    pts: &[Pt],
+    alpha: f64,
+    trim: bool,
+) {
     let abs = translated(pts, origin[0], origin[1]);
     sketch.poly(abs.clone(), PolyStyle::paper());
-    let line = if trim && abs.len() > 2 { &abs[1..abs.len() - 1] } else { &abs[..] };
+    let line = if trim && abs.len() > 2 {
+        &abs[1..abs.len() - 1]
+    } else {
+        &abs[..]
+    };
     let col = Paint::ink(100, alpha + chance.random() * 0.1);
-    let style = StrokeStyle { col, wid: 2.5, profile: &sin_one, noi: 0.9, out: 0.0 };
+    let style = StrokeStyle {
+        col,
+        wid: 2.5,
+        profile: &sin_one,
+        noi: 0.9,
+        out: 0.0,
+    };
     stroke(sketch, chance, line, &style);
 }
 

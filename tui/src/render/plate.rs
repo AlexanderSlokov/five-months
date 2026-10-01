@@ -55,7 +55,12 @@ pub struct DotPlate {
     pub cell_bg: Vec<Rgb>,
 }
 
-const BAYER4: [[f32; 4]; 4] = [[0.0, 8.0, 2.0, 10.0], [12.0, 4.0, 14.0, 6.0], [3.0, 11.0, 1.0, 9.0], [15.0, 7.0, 13.0, 5.0]];
+const BAYER4: [[f32; 4]; 4] = [
+    [0.0, 8.0, 2.0, 10.0],
+    [12.0, 4.0, 14.0, 6.0],
+    [3.0, 11.0, 1.0, 9.0],
+    [15.0, 7.0, 13.0, 5.0],
+];
 
 fn bayer(x: usize, y: usize) -> f32 {
     (BAYER4[y % 4][x % 4] + 0.5) / 16.0
@@ -73,7 +78,13 @@ fn half_block_plate(img: &DotImage, paper: &Paper) -> DotPlate {
     let dots = (0..img.w * img.h)
         .map(|i| Some(multiply(paper.tint(i % img.w, i / img.w, 0.08), img.rgb[i])))
         .collect();
-    DotPlate { marker: DotMarker::HalfBlock, dots_w: img.w, dots_h: img.h, dots, cell_bg: Vec::new() }
+    DotPlate {
+        marker: DotMarker::HalfBlock,
+        dots_w: img.w,
+        dots_h: img.h,
+        dots,
+        cell_bg: Vec::new(),
+    }
 }
 
 fn pattern_plate(img: &DotImage, marker: DotMarker, paper: &Paper) -> DotPlate {
@@ -98,7 +109,14 @@ fn pattern_plate(img: &DotImage, marker: DotMarker, paper: &Paper) -> DotPlate {
 }
 
 /// Dithers one cell and colours its dots with the cell's mean ink.
-fn ink_cell(img: &DotImage, tones: &[f32], plate: &mut DotPlate, origin: (usize, usize), size: (usize, usize), bg: Rgb) {
+fn ink_cell(
+    img: &DotImage,
+    tones: &[f32],
+    plate: &mut DotPlate,
+    origin: (usize, usize),
+    size: (usize, usize),
+    bg: Rgb,
+) {
     let positions: Vec<(usize, usize)> = (0..size.1)
         .flat_map(|dy| (0..size.0).map(move |dx| (origin.0 + dx, origin.1 + dy)))
         .filter(|&(x, y)| tones[y * img.w + x] > bayer(x, y))
@@ -130,7 +148,11 @@ mod tests {
     use super::*;
 
     fn flat(w: usize, h: usize, v: f32) -> DotImage {
-        DotImage { w, h, rgb: vec![[v; 3]; w * h] }
+        DotImage {
+            w,
+            h,
+            rgb: vec![[v; 3]; w * h],
+        }
     }
 
     #[test]

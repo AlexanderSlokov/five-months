@@ -16,12 +16,20 @@ pub struct PolyStyle {
 impl PolyStyle {
     /// `poly(p, {fil: paint})`: filled, no outline.
     pub fn filled(paint: Paint) -> Self {
-        Self { fill: paint, outline: Paint::Clear, width: 0.0 }
+        Self {
+            fill: paint,
+            outline: Paint::Clear,
+            width: 0.0,
+        }
     }
 
     /// `poly(p, {fil: "none", str: paint, wid})`: an open polyline.
     pub fn outlined(paint: Paint, width: f64) -> Self {
-        Self { fill: Paint::Clear, outline: paint, width }
+        Self {
+            fill: Paint::Clear,
+            outline: paint,
+            width,
+        }
     }
 
     /// `poly(p, {fil: "white", str: "none"})`: hides what lies behind.
@@ -32,7 +40,11 @@ impl PolyStyle {
     /// Fill and outline with the same paint, as `stroke()` and the
     /// triangle shards do.
     pub fn solid(paint: Paint, width: f64) -> Self {
-        Self { fill: paint, outline: paint, width }
+        Self {
+            fill: paint,
+            outline: paint,
+            width,
+        }
     }
 }
 
@@ -82,7 +94,12 @@ impl Sketch {
     /// Union of all bounding boxes, `None` for an empty sketch.
     pub fn bbox(&self) -> Option<[f64; 4]> {
         self.polygons.iter().map(|p| p.bbox).reduce(|a, b| {
-            [a[0].min(b[0]), a[1].min(b[1]), a[2].max(b[2]), a[3].max(b[3])]
+            [
+                a[0].min(b[0]),
+                a[1].min(b[1]),
+                a[2].max(b[2]),
+                a[3].max(b[3]),
+            ]
         })
     }
 

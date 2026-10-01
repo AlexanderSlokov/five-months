@@ -13,8 +13,22 @@ const SPAN: f64 = 10.0;
 const SEG: usize = 5;
 
 /// Example: `dist_mount(&mut sk, &mut ch, x, 260.0, 42.0, 150.0, 1000.0)`.
-pub fn dist_mount(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64, seed: f64, hei: f64, len: f64) {
-    let range = Range { xoff, yoff, seed, hei, steps: len / SPAN };
+pub fn dist_mount(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    xoff: f64,
+    yoff: f64,
+    seed: f64,
+    hei: f64,
+    len: f64,
+) {
+    let range = Range {
+        xoff,
+        yoff,
+        seed,
+        hei,
+        steps: len / SPAN,
+    };
     let strips = (range.steps / SEG as f64).ceil() as usize;
     for i in 0..strips {
         let strip = range.strip(chance, i);
@@ -38,7 +52,9 @@ struct Range {
 impl Range {
     /// Ridge points of strip `i`, preceded (reversed) by its base points.
     fn strip(&self, chance: &Chance, i: usize) -> Vec<Pt> {
-        let base: Vec<Pt> = (0..=SEG / 2 + 1).map(|j| self.base_point(chance, i * SEG + j * 2)).collect();
+        let base: Vec<Pt> = (0..=SEG / 2 + 1)
+            .map(|j| self.base_point(chance, i * SEG + j * 2))
+            .collect();
         let ridge = (0..=SEG).map(|j| self.ridge_point(chance, i * SEG + j));
         base.into_iter().rev().chain(ridge).collect()
     }
@@ -61,7 +77,10 @@ impl Range {
 
     /// Opaque light grey varying with position.
     fn ink(&self, chance: &Chance, p: Pt) -> Paint {
-        Paint::ink((chance.noise(p[0] * 0.02, p[1] * 0.02, self.yoff) * 55.0 + 200.0) as u8, 1.0)
+        Paint::ink(
+            (chance.noise(p[0] * 0.02, p[1] * 0.02, self.yoff) * 55.0 + 200.0) as u8,
+            1.0,
+        )
     }
 }
 
@@ -85,7 +104,13 @@ mod tests {
     #[test]
     fn strip_has_base_and_ridge() {
         let c = Chance::from_seed(2);
-        let r = Range { xoff: 0.0, yoff: 0.0, seed: 0.0, hei: 100.0, steps: 50.0 };
+        let r = Range {
+            xoff: 0.0,
+            yoff: 0.0,
+            seed: 0.0,
+            hei: 100.0,
+            steps: 50.0,
+        };
         assert_eq!(r.strip(&c, 0).len(), (SEG / 2 + 2) + (SEG + 1));
     }
 }

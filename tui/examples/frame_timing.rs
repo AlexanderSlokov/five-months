@@ -16,7 +16,12 @@ fn main() {
     for k in &missing {
         let _ = world.generate(*k);
     }
-    println!("generate {} chunks: {:?} ({:?}/chunk)", missing.len(), t.elapsed(), t.elapsed() / missing.len() as u32);
+    println!(
+        "generate {} chunks: {:?} ({:?}/chunk)",
+        missing.len(),
+        t.elapsed(),
+        t.elapsed() / missing.len() as u32
+    );
     for marker in [DotMarker::Braille, DotMarker::HalfBlock] {
         let mut room = Darkroom::default();
         let cam = Camera { marker, ..cam };
@@ -25,7 +30,15 @@ fn main() {
         println!("{marker:?} first frame: {:?}", t.elapsed());
         let t = Instant::now();
         for i in 0..100 {
-            let _ = room.develop(&world, &Camera { x: i as f64 * 5.0, ..cam }, cols, rows);
+            let _ = room.develop(
+                &world,
+                &Camera {
+                    x: i as f64 * 5.0,
+                    ..cam
+                },
+                cols,
+                rows,
+            );
         }
         println!("{marker:?} scrolling: {:?}/frame", t.elapsed() / 100);
     }

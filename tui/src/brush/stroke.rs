@@ -61,7 +61,10 @@ fn edges(chance: &Chance, pts: &[Pt], style: &StrokeStyle, n0: f64) -> (Vec<Pt>,
             let w = w * (1.0 - style.noi) + w * style.noi * chance.noise2(i as f64 * 0.5, n0);
             let a = bisector(pts[i - 1], pts[i], pts[i + 1]);
             let (dx, dy) = (w * a.cos(), w * a.sin());
-            ([pts[i][0] + dx, pts[i][1] + dy], [pts[i][0] - dx, pts[i][1] - dy])
+            (
+                [pts[i][0] + dx, pts[i][1] + dy],
+                [pts[i][0] - dx, pts[i][1] - dy],
+            )
         })
         .unzip()
 }
@@ -96,7 +99,12 @@ mod tests {
     fn width_is_respected_without_noise() {
         let (mut s, mut c) = (Sketch::new(), Chance::from_seed(2));
         let flat = |_: f64| 1.0;
-        let style = StrokeStyle { wid: 3.0, noi: 0.0, profile: &flat, ..Default::default() };
+        let style = StrokeStyle {
+            wid: 3.0,
+            noi: 0.0,
+            profile: &flat,
+            ..Default::default()
+        };
         stroke(&mut s, &mut c, &line(5), &style);
         let ys: Vec<f64> = s.polygons[0].pts.iter().map(|p| p[1].abs()).collect();
         assert!(ys.iter().all(|y| *y < 3.0 + 1e-9));

@@ -22,7 +22,12 @@ pub struct Camera {
 
 impl Default for Camera {
     fn default() -> Self {
-        Self { x: 0.0, zoom: 1.0, pan: 1.0, marker: DotMarker::Braille }
+        Self {
+            x: 0.0,
+            zoom: 1.0,
+            pan: 1.0,
+            marker: DotMarker::Braille,
+        }
     }
 }
 
@@ -30,7 +35,13 @@ impl Camera {
     /// Viewport for a terminal area of `cols × rows` cells.
     pub fn viewport(&self, cols: u16, rows: u16) -> Viewport {
         let (cw, ch) = self.marker.cell_dots();
-        Viewport::fit(self.x, self.zoom, self.pan, usize::from(cols) * cw, usize::from(rows) * ch)
+        Viewport::fit(
+            self.x,
+            self.zoom,
+            self.pan,
+            usize::from(cols) * cw,
+            usize::from(rows) * ch,
+        )
     }
 }
 
@@ -96,7 +107,10 @@ mod tests {
 
     #[test]
     fn same_seed_same_frame() {
-        let cam = Camera { x: 300.0, ..Default::default() };
+        let cam = Camera {
+            x: 300.0,
+            ..Default::default()
+        };
         let a = compose(&mut World::new("x"), &cam, 40, 12);
         let b = compose(&mut World::new("x"), &cam, 40, 12);
         assert_eq!(a, b);

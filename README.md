@@ -6,6 +6,20 @@ A gift, for our beloved Godmother of Destruction.
 
 Hope you like this late birthday present.
 
+## In the terminal
+
+`tui/` is a Rust + [Ratatui](https://ratatui.rs) port that paints the endless scroll in braille dots, right in your terminal (truecolor recommended).
+
+```sh
+make run                 # unroll the scroll (seed "naught")
+make run SEED=anything   # same seed, same landscape, every time
+make birthday            # what it looks like on the 11th of August
+make png X=3000          # one frame to a PNG, without a terminal
+make                     # every other target
+```
+
+Keys: `space` pause / resume, `←/→` wander (Shift ×5), `[ ]` speed, `+ -` zoom, `↑/↓` look up/down, `m` braille · octant · half-block, `r` new seed, `e` save SVG, `i` status line, `?` help, `q` quit.
+
 ## Credits
 
 Thank you, Lingdong Huang, for the amazing project: [LingdongHuang/shan-shui-inf: Shan, Shui\* (github.com)](https://github.com/LingdongHuang/shan-shui-inf)

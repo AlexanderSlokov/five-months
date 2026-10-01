@@ -51,7 +51,10 @@ mod tests {
     #[test]
     fn exports_polyline() {
         let mut s = Sketch::new();
-        s.poly(vec![[0.0, 0.0], [1.0, 2.0]], PolyStyle::filled(Paint::ink(100, 0.5)));
+        s.poly(
+            vec![[0.0, 0.0], [1.0, 2.0]],
+            PolyStyle::filled(Paint::ink(100, 0.5)),
+        );
         let svg = to_svg(&s, [0.0, 0.0, 10.0, 10.0]);
         assert!(svg.contains("points=' 0.0,0.0 1.0,2.0'"));
         assert!(svg.contains("fill:rgba(100,100,100,0.500)"));

@@ -14,7 +14,9 @@ pub struct Paper {
 
 impl Default for Paper {
     fn default() -> Self {
-        Self { perlin: world_perlin(0x9A9E_5) }
+        Self {
+            perlin: world_perlin(0x0009_A9E5),
+        }
     }
 }
 
@@ -31,7 +33,8 @@ impl Paper {
 
 /// Stable per-position grain in `[0, 1)` (a hash, so frames never flicker).
 fn grain(x: usize, y: usize) -> f64 {
-    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
+    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
     h ^= h >> 29;
     h = h.wrapping_mul(0xBF58_476D_1CE4_E5B9);
     h ^= h >> 32;

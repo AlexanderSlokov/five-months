@@ -25,23 +25,67 @@ pub struct FlatMountArgs {
 }
 
 /// Example: `flat_mount(&mut sk, &mut ch, x, y, 2.0, &FlatMountArgs { hei: 100.0, wid: 800.0, tex: 80, cho: 0.6 })`.
-pub fn flat_mount(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64, seed: f64, a: &FlatMountArgs) {
+pub fn flat_mount(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    xoff: f64,
+    yoff: f64,
+    seed: f64,
+    a: &FlatMountArgs,
+) {
     let (mesh, flats) = plateau_mesh(chance, yoff, seed, a);
     silhouette(sketch, chance, &mesh[0], [xoff, yoff], RESO[0] as f64 * 4.0);
-    let dis = |ch: &mut Chance| if ch.random() > 0.5 { 0.1 + 0.4 * ch.random() } else { 0.9 - 0.4 * ch.random() };
+    let dis = |ch: &mut Chance| {
+        if ch.random() > 0.5 {
+            0.1 + 0.4 * ch.random()
+        } else {
+            0.9 - 0.4 * ch.random()
+        }
+    };
     let shifted: Mesh = mesh.iter().map(|row| translated(row, xoff, yoff)).collect();
-    texture(sketch, chance, &shifted, &TextureStyle { tex: a.tex, wid: 2.0, dis: &dis, ..Default::default() });
-    let Some(ground) = ground_outline(chance, &flats) else { return };
+    texture(
+        sketch,
+        chance,
+        &shifted,
+        &TextureStyle {
+            tex: a.tex,
+            wid: 2.0,
+            dis: &dis,
+            ..Default::default()
+        },
+    );
+    let Some(ground) = ground_outline(chance, &flats) else {
+        return;
+    };
     sketch.poly(translated(&ground, xoff, yoff), PolyStyle::paper());
-    let style = StrokeStyle { wid: 3.0, col: Paint::ink(100, 0.2), ..Default::default() };
+    let style = StrokeStyle {
+        wid: 3.0,
+        col: Paint::ink(100, 0.2),
+        ..Default::default()
+    };
     stroke(sketch, chance, &translated(&ground, xoff, yoff), &style);
     if let Some(b) = bounds(&ground) {
-        flat_dec(sketch, chance, [xoff, yoff], &Ground { xmin: b[0], ymin: b[1], xmax: b[2], ymax: b[3] });
+        flat_dec(
+            sketch,
+            chance,
+            [xoff, yoff],
+            &Ground {
+                xmin: b[0],
+                ymin: b[1],
+                xmax: b[2],
+                ymax: b[3],
+            },
+        );
     }
 }
 
 /// Contours plus, per contour, the start/end points of its clipped runs.
-fn plateau_mesh(chance: &mut Chance, yoff: f64, seed: f64, a: &FlatMountArgs) -> (Mesh, Vec<Vec<Pt>>) {
+fn plateau_mesh(
+    chance: &mut Chance,
+    yoff: f64,
+    seed: f64,
+    a: &FlatMountArgs,
+) -> (Mesh, Vec<Vec<Pt>>) {
     let (mut mesh, mut flats) = (Vec::new(), Vec::new());
     let mut hoff = 0.0;
     for j in 0..RESO[0] {
@@ -54,7 +98,14 @@ fn plateau_mesh(chance: &mut Chance, yoff: f64, seed: f64, a: &FlatMountArgs) ->
     (mesh, flats)
 }
 
-fn plateau_row(chance: &Chance, seed: f64, a: &FlatMountArgs, j: usize, p: f64, hoff: f64) -> (Vec<Pt>, Vec<Pt>) {
+fn plateau_row(
+    chance: &Chance,
+    seed: f64,
+    a: &FlatMountArgs,
+    j: usize,
+    p: f64,
+    hoff: f64,
+) -> (Vec<Pt>, Vec<Pt>) {
     let cut = -100.0 * a.cho + hoff;
     let (mut row, mut flat): (Vec<Pt>, Vec<Pt>) = (Vec::new(), Vec::new());
     for i in 0..RESO[1] {
@@ -116,13 +167,26 @@ mod tests {
     use super::*;
 
     fn args() -> FlatMountArgs {
-        FlatMountArgs { hei: 100.0, wid: 800.0, tex: 80, cho: 0.5 }
+        FlatMountArgs {
+            hei: 100.0,
+            wid: 800.0,
+            tex: 80,
+            cho: 0.5,
+        }
     }
 
     #[test]
     fn top_is_clipped() {
         let mut c = Chance::from_seed(1);
-        let (mesh, flats) = plateau_mesh(&mut c, 600.0, 1.0, &FlatMountArgs { hei: 400.0, ..args() });
+        let (mesh, flats) = plateau_mesh(
+            &mut c,
+            600.0,
+            1.0,
+            &FlatMountArgs {
+                hei: 400.0,
+                ..args()
+            },
+        );
         let top = mesh[0].iter().map(|p| p[1]).fold(f64::MAX, f64::min);
         let at_top = mesh[0].iter().filter(|p| (p[1] - top).abs() < 1e-9).count();
         assert!(at_top > 1, "top not flat");

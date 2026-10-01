@@ -5,10 +5,10 @@
 use super::rock::{RockArgs, rock};
 use crate::chance::Chance;
 use crate::geom::Pt;
+use crate::ink::Paint;
 use crate::ink::Sketch;
 use crate::scenery::arch::{Arch01Args, arch01};
 use crate::scenery::tree::{tree02, tree04, tree05, tree06, tree07, tree08};
-use crate::ink::Paint;
 
 /// Bounds of the flat ground, relative to the plateau origin.
 #[derive(Clone, Copy, Debug)]
@@ -59,7 +59,12 @@ pub fn flat_dec(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, g: &Ground
 }
 
 fn big_rock(chance: &mut Chance) -> RockArgs {
-    RockArgs { wid: 50.0 + chance.random() * 20.0, hei: 40.0 + chance.random() * 20.0, sha: 5, ..Default::default() }
+    RockArgs {
+        wid: 50.0 + chance.random() * 20.0,
+        hei: 40.0 + chance.random() * 20.0,
+        sha: 5,
+        ..Default::default()
+    }
 }
 
 fn pebbles(sketch: &mut Sketch, chance: &mut Chance, o: Pt, g: &Ground) {
@@ -69,7 +74,12 @@ fn pebbles(sketch: &mut Sketch, chance: &mut Chance, o: Pt, g: &Ground) {
         let x = o[0] + g.rand_x(chance);
         let y = o[1] + g.mid_y() + chance.norm_rand(-10.0, 10.0) + 10.0;
         let seed = chance.random() * 100.0;
-        let args = RockArgs { wid: 10.0 + chance.random() * 20.0, hei: 10.0 + chance.random() * 20.0, sha: 2, ..Default::default() };
+        let args = RockArgs {
+            wid: 10.0 + chance.random() * 20.0,
+            hei: 10.0 + chance.random() * 20.0,
+            sha: 2,
+            ..Default::default()
+        };
         rock(sketch, chance, x, y, seed, &args);
         j += 1.0;
     }
@@ -178,7 +188,12 @@ fn pavilion(sketch: &mut Sketch, chance: &mut Chance, o: Pt, g: &Ground) {
 mod tests {
     use super::*;
 
-    const GROUND: Ground = Ground { xmin: -200.0, ymin: -60.0, xmax: 200.0, ymax: -40.0 };
+    const GROUND: Ground = Ground {
+        xmin: -200.0,
+        ymin: -60.0,
+        xmax: 200.0,
+        ymax: -40.0,
+    };
 
     #[test]
     fn decorates_something() {

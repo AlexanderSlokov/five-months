@@ -49,7 +49,14 @@ impl InkLayer {
     pub fn new(view: Viewport, ss: usize) -> Self {
         let (w, h) = (view.dots_w * ss, view.dots_h * ss);
         let px = vec![[0.0; 4]; w * h];
-        Self { view, ss, w, h, px, cov: Coverage::default() }
+        Self {
+            view,
+            ss,
+            w,
+            h,
+            px,
+            cov: Coverage::default(),
+        }
     }
 
     /// Paints one polygon: fill first, then its outline, like SVG.
@@ -58,10 +65,14 @@ impl InkLayer {
             return;
         }
         let k = self.ss as f64;
-        let pts: Vec<[f64; 2]> = polygon.pts.iter().map(|p| {
-            let d = self.view.to_dots(*p);
-            [d[0] * k, d[1] * k]
-        }).collect();
+        let pts: Vec<[f64; 2]> = polygon
+            .pts
+            .iter()
+            .map(|p| {
+                let d = self.view.to_dots(*p);
+                [d[0] * k, d[1] * k]
+            })
+            .collect();
         let style = polygon.style;
         if let Some(pig) = pigment(style.fill) {
             self.reset_cov(polygon.bbox);
@@ -102,7 +113,9 @@ impl InkLayer {
     /// Box-filters to dots and flattens over white.
     pub fn resolve(&self) -> DotImage {
         let (dw, dh) = (self.view.dots_w, self.view.dots_h);
-        let rgb = (0..dw * dh).map(|i| self.dot_color(i % dw, i / dw)).collect();
+        let rgb = (0..dw * dh)
+            .map(|i| self.dot_color(i % dw, i / dw))
+            .collect();
         DotImage { w: dw, h: dh, rgb }
     }
 
@@ -124,7 +137,11 @@ impl InkLayer {
 
 /// Renders polygons in order into a dot image. Example:
 /// `rasterize(chunks.iter().flat_map(|c| &c.sketch.polygons), view, 3)`.
-pub fn rasterize<'a>(polygons: impl IntoIterator<Item = &'a InkPolygon>, view: Viewport, ss: usize) -> DotImage {
+pub fn rasterize<'a>(
+    polygons: impl IntoIterator<Item = &'a InkPolygon>,
+    view: Viewport,
+    ss: usize,
+) -> DotImage {
     let mut layer = InkLayer::new(view, ss);
     polygons.into_iter().for_each(|p| layer.paint(p));
     layer.resolve()
@@ -136,7 +153,13 @@ mod tests {
     use crate::ink::{PolyStyle, Sketch};
 
     fn view() -> Viewport {
-        Viewport { left: 0.0, top: 0.0, scale: 1.0, dots_w: 10, dots_h: 10 }
+        Viewport {
+            left: 0.0,
+            top: 0.0,
+            scale: 1.0,
+            dots_w: 10,
+            dots_h: 10,
+        }
     }
 
     fn square(x0: f64, x1: f64) -> Vec<[f64; 2]> {
@@ -181,7 +204,10 @@ mod tests {
     #[test]
     fn outline_draws_open_line() {
         let mut s = Sketch::new();
-        s.poly(vec![[0.0, 5.0], [10.0, 5.0]], PolyStyle::outlined(Paint::ink(0, 1.0), 1.0));
+        s.poly(
+            vec![[0.0, 5.0], [10.0, 5.0]],
+            PolyStyle::outlined(Paint::ink(0, 1.0), 1.0),
+        );
         let img = rasterize(&s.polygons, view(), 2);
         assert!(img.at(5, 5)[0] < 0.6 || img.at(5, 4)[0] < 0.6);
         assert_eq!(img.at(5, 0), [1.0; 3]);

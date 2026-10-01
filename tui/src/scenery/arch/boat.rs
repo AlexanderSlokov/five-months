@@ -25,7 +25,12 @@ pub fn boat01(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64, sc
     let hull = hull(sca, dir);
     sketch.poly(translated(&hull, xoff, yoff), PolyStyle::paper());
     let wave = |x: f64| (x * PI * 2.0).sin();
-    let style = StrokeStyle { wid: 1.0, profile: &wave, col: Paint::ink(100, 0.4), ..Default::default() };
+    let style = StrokeStyle {
+        wid: 1.0,
+        profile: &wave,
+        col: Paint::ink(100, 0.4),
+        ..Default::default()
+    };
     stroke(sketch, chance, &translated(&hull, xoff, yoff), &style);
 }
 

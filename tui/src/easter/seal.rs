@@ -33,7 +33,12 @@ impl Seal {
         if area.width < WIDTH + 4 || area.height < HEIGHT + 3 {
             return None;
         }
-        Some(Rect::new(area.right() - WIDTH - 3, area.bottom() - HEIGHT - 2, WIDTH, HEIGHT + 1))
+        Some(Rect::new(
+            area.right() - WIDTH - 3,
+            area.bottom() - HEIGHT - 2,
+            WIDTH,
+            HEIGHT + 1,
+        ))
     }
 }
 
@@ -53,7 +58,12 @@ impl Widget for Seal {
         let w = self.caption.chars().count() as u16;
         if caption_y < area.bottom() {
             let x = (area.x + WIDTH / 2).saturating_sub(w / 2);
-            buf.set_string(x, caption_y, &self.caption, Style::default().fg(self.palette.color(VERMILION)));
+            buf.set_string(
+                x,
+                caption_y,
+                &self.caption,
+                Style::default().fg(self.palette.color(VERMILION)),
+            );
         }
     }
 }
@@ -67,7 +77,11 @@ mod tests {
         let area = Rect::new(0, 0, 20, 10);
         let mut buf = Buffer::empty(area);
         let at = Seal::placement(area).unwrap();
-        Seal { caption: "N".into(), palette: Palette::TrueColor }.render(at, &mut buf);
+        Seal {
+            caption: "N".into(),
+            palette: Palette::TrueColor,
+        }
+        .render(at, &mut buf);
         assert_eq!(buf[(at.x + 1, at.y + 1)].symbol(), "快");
         assert_eq!(buf[(at.x, at.y)].bg, Palette::TrueColor.color(VERMILION));
     }

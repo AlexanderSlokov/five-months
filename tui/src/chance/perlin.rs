@@ -73,10 +73,9 @@ impl Perlin {
     }
 
     fn octave(&self, x: Axis, y: Axis, z: Axis) -> f64 {
-        let of = x
-            .i
-            .wrapping_add(y.i.wrapping_shl(YWRAPB as u32))
-            .wrapping_add(z.i.wrapping_shl(ZWRAPB as u32));
+        let of =
+            x.i.wrapping_add(y.i.wrapping_shl(YWRAPB as u32))
+                .wrapping_add(z.i.wrapping_shl(ZWRAPB as u32));
         let (rxf, ryf) = (scaled_cosine(x.f), scaled_cosine(y.f));
         let near = self.plane(of, rxf, ryf);
         let far = self.plane(of.wrapping_add(ZWRAP), rxf, ryf);

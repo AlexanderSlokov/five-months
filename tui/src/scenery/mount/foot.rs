@@ -17,7 +17,11 @@ pub fn foot(sketch: &mut Sketch, chance: &mut Chance, mesh: &Mesh, origin: Pt) {
         sketch.poly(translated(f, origin[0], origin[1]), PolyStyle::paper());
     }
     for f in &flaps {
-        let style = StrokeStyle { col: Paint::ink(100, 0.1 + chance.random() * 0.1), wid: 1.0, ..Default::default() };
+        let style = StrokeStyle {
+            col: Paint::ink(100, 0.1 + chance.random() * 0.1),
+            wid: 1.0,
+            ..Default::default()
+        };
         stroke(sketch, chance, &translated(f, origin[0], origin[1]), &style);
     }
 }
@@ -50,13 +54,27 @@ fn flaps(chance: &mut Chance, mesh: &Mesh, xoff: f64) -> Vec<Vec<Pt>> {
 fn edge_runs(chance: &Chance, row: &[Pt], i: usize) -> (Vec<Pt>, Vec<Pt>) {
     let n = row.len().div_ceil(8).min(10);
     let shift = |j: usize| chance.noise2(j as f64 * 0.1, i as f64) * 10.0;
-    let left = (0..n).rev().map(|j| [row[j][0] + shift(j), row[j][1]]).collect();
-    let right = (0..n).rev().map(|j| [row[row.len() - 1 - j][0] - shift(j), row[row.len() - 1 - j][1]]).collect();
+    let left = (0..n)
+        .rev()
+        .map(|j| [row[j][0] + shift(j), row[j][1]])
+        .collect();
+    let right = (0..n)
+        .rev()
+        .map(|j| {
+            [
+                row[row.len() - 1 - j][0] - shift(j),
+                row[row.len() - 1 - j][1],
+            ]
+        })
+        .collect();
     (left, right)
 }
 
 fn drop_to(a: Pt, b: Pt, p: f64, dy: f64) -> Pt {
-    [a[0] * (1.0 - p) + b[0] * p, a[1] * (1.0 - p) + b[1] * p + dy]
+    [
+        a[0] * (1.0 - p) + b[0] * p,
+        a[1] * (1.0 - p) + b[1] * p + dy,
+    ]
 }
 
 #[cfg(test)]
@@ -65,7 +83,11 @@ mod tests {
 
     fn mesh() -> Mesh {
         (0..10)
-            .map(|i| (0..50).map(|j| [(j as f64 - 25.0) * (10.0 - i as f64), -(i as f64) * 5.0]).collect())
+            .map(|i| {
+                (0..50)
+                    .map(|j| [(j as f64 - 25.0) * (10.0 - i as f64), -(i as f64) * 5.0])
+                    .collect()
+            })
             .collect()
     }
 
@@ -73,7 +95,7 @@ mod tests {
     fn flaps_come_in_pairs() {
         let mut c = Chance::from_seed(1);
         let f = flaps(&mut c, &mesh(), 0.0);
-        assert!(!f.is_empty() && f.len() % 2 == 0);
+        assert!(!f.is_empty() && f.len().is_multiple_of(2));
         assert!(f.iter().all(|flap| flap.len() == 7 + SPAN));
     }
 
@@ -82,6 +104,10 @@ mod tests {
         let (mut s, mut c) = (Sketch::new(), Chance::from_seed(2));
         foot(&mut s, &mut c, &mesh(), [0.0, 0.0]);
         let half = s.len() / 2;
-        assert!(s.polygons[..half].iter().all(|p| p.style.fill == Paint::Paper));
+        assert!(
+            s.polygons[..half]
+                .iter()
+                .all(|p| p.style.fill == Paint::Paper)
+        );
     }
 }

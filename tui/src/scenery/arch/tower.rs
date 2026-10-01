@@ -13,7 +13,12 @@ const WID: f64 = 20.0;
 /// Example: `transmission_tower(&mut sk, &mut ch, x, y)`.
 pub fn transmission_tower(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64) {
     let mut lines = cross_arms();
-    let left = [[-WID * 0.05, -HEI], [-WID * 0.1, -HEI * 0.9], [-WID * 0.2, -HEI * 0.5], [-WID * 0.5, 0.0]];
+    let left = [
+        [-WID * 0.05, -HEI],
+        [-WID * 0.1, -HEI * 0.9],
+        [-WID * 0.2, -HEI * 0.5],
+        [-WID * 0.5, 0.0],
+    ];
     let right: Vec<Pt> = left.iter().map(|p| [-p[0], p[1]]).collect();
     let (l10, l11) = (subdivide(&left, 5), subdivide(&right, 5));
     for i in 0..l10.len() - 1 {
@@ -26,9 +31,19 @@ pub fn transmission_tower(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, y
     lines.push(left.to_vec());
     lines.push(right);
     let half = |_: f64| 0.5;
-    let style = StrokeStyle { wid: 1.0, profile: &half, col: Paint::ink(100, 0.4), ..Default::default() };
+    let style = StrokeStyle {
+        wid: 1.0,
+        profile: &half,
+        col: Paint::ink(100, 0.4),
+        ..Default::default()
+    };
     for line in lines {
-        stroke(sketch, chance, &translated(&subdivide(&line, 5), xoff, yoff), &style);
+        stroke(
+            sketch,
+            chance,
+            &translated(&subdivide(&line, 5), xoff, yoff),
+            &style,
+        );
     }
 }
 

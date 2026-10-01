@@ -52,7 +52,11 @@ mod tests {
     use super::*;
 
     fn image(w: usize, h: usize, f: impl Fn(usize, usize) -> f32) -> DotImage {
-        DotImage { w, h, rgb: (0..w * h).map(|i| [f(i % w, i / w); 3]).collect() }
+        DotImage {
+            w,
+            h,
+            rgb: (0..w * h).map(|i| [f(i % w, i / w); 3]).collect(),
+        }
     }
 
     #[test]

@@ -27,7 +27,13 @@ impl Viewport {
         let visible = WORLD_HEIGHT / zoom.max(1.0);
         let top = (WORLD_HEIGHT - visible) * pan.clamp(0.0, 1.0);
         let scale = visible / dots_h.max(1) as f64;
-        Self { left, top, scale, dots_w, dots_h }
+        Self {
+            left,
+            top,
+            scale,
+            dots_w,
+            dots_h,
+        }
     }
 
     pub fn world_width(&self) -> f64 {
@@ -37,12 +43,20 @@ impl Viewport {
     /// `[xmin, ymin, xmax, ymax]` in world units.
     pub fn world_rect(&self) -> [f64; 4] {
         let h = self.dots_h as f64 * self.scale;
-        [self.left, self.top, self.left + self.world_width(), self.top + h]
+        [
+            self.left,
+            self.top,
+            self.left + self.world_width(),
+            self.top + h,
+        ]
     }
 
     /// World point → fractional dot coordinates.
     pub fn to_dots(&self, p: Pt) -> Pt {
-        [(p[0] - self.left) / self.scale, (p[1] - self.top) / self.scale]
+        [
+            (p[0] - self.left) / self.scale,
+            (p[1] - self.top) / self.scale,
+        ]
     }
 
     /// Whether a world bbox overlaps the view.

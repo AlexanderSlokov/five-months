@@ -58,7 +58,11 @@ pub fn apply(state: &mut AppState, action: Action, size: (u16, u16)) {
         Action::Scroll(dx) => state.scroll(dx),
         Action::ToggleAuto => {
             state.auto = !state.auto;
-            state.notify(if state.auto { "auto-scroll on" } else { "auto-scroll off" });
+            state.notify(if state.auto {
+                "auto-scroll on"
+            } else {
+                "auto-scroll off"
+            });
         }
         Action::Speed(f) => {
             state.speed = (state.speed * f).clamp(10.0, 2000.0);
@@ -78,12 +82,18 @@ pub fn apply(state: &mut AppState, action: Action, size: (u16, u16)) {
 }
 
 fn random_seed() -> String {
-    let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
     nanos.to_string()
 }
 
 fn export(state: &mut AppState, (cols, rows): (u16, u16)) {
-    let name = format!("five-months-{}-{:.0}.svg", state.world.seed_text, state.cam.x);
+    let name = format!(
+        "five-months-{}-{:.0}.svg",
+        state.world.seed_text, state.cam.x
+    );
     let svg = export_svg(&mut state.world, &state.cam, cols, rows);
     match std::fs::write(&name, svg) {
         Ok(()) => state.notify(format!("saved {name}")),
@@ -105,7 +115,10 @@ mod tests {
     fn mapping() {
         assert_eq!(action_for(key(KeyCode::Char('q'))), Some(Action::Quit));
         assert_eq!(action_for(key(KeyCode::Right)), Some(Action::Scroll(STEP)));
-        assert_eq!(action_for(KeyEvent::new(KeyCode::Right, KeyModifiers::SHIFT)), Some(Action::Scroll(STEP * 5.0)));
+        assert_eq!(
+            action_for(KeyEvent::new(KeyCode::Right, KeyModifiers::SHIFT)),
+            Some(Action::Scroll(STEP * 5.0))
+        );
         assert_eq!(action_for(key(KeyCode::Char('x'))), None);
     }
 

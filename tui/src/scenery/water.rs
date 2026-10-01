@@ -23,7 +23,11 @@ pub fn water(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64) {
         .collect();
     // The original skips the first ripple when drawing.
     for line in &ripples[1..] {
-        let style = StrokeStyle { col: Paint::ink(100, 0.3 + chance.random() * 0.3), wid: 1.0, ..Default::default() };
+        let style = StrokeStyle {
+            col: Paint::ink(100, 0.3 + chance.random() * 0.3),
+            wid: 1.0,
+            ..Default::default()
+        };
         stroke(sketch, chance, &translated(line, xoff, yoff), &style);
     }
 }
@@ -32,7 +36,10 @@ fn ripple(chance: &Chance, xk: f64, yk: f64, lk: f64) -> Vec<Pt> {
     let mut out = Vec::new();
     let mut j = -lk;
     while j < lk {
-        out.push([j + xk, (j * 0.2).sin() * HEI * chance.noise1(j * 0.1) - 20.0 + yk]);
+        out.push([
+            j + xk,
+            (j * 0.2).sin() * HEI * chance.noise1(j * 0.1) - 20.0 + yk,
+        ]);
         j += 5.0;
     }
     out

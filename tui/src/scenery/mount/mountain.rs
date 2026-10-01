@@ -29,22 +29,48 @@ pub struct MountainArgs {
 
 impl Default for MountainArgs {
     fn default() -> Self {
-        Self { hei: None, wid: None, tex: 200, veg: true }
+        Self {
+            hei: None,
+            wid: None,
+            tex: 200,
+            veg: true,
+        }
     }
 }
 
 /// Example: `mountain(&mut sk, &mut ch, 400.0, 500.0, 1.3, &MountainArgs::default())`.
-pub fn mountain(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64, seed: f64, a: &MountainArgs) {
+pub fn mountain(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    xoff: f64,
+    yoff: f64,
+    seed: f64,
+    a: &MountainArgs,
+) {
     let hei = a.hei.unwrap_or_else(|| 100.0 + chance.random() * 400.0);
     let wid = a.wid.unwrap_or_else(|| 400.0 + chance.random() * 200.0);
     let mesh = mountain_mesh(chance, yoff, seed, hei, wid);
-    let m = Mount { mesh: &mesh, origin: [xoff, yoff], seed, hei };
+    let m = Mount {
+        mesh: &mesh,
+        origin: [xoff, yoff],
+        seed,
+        hei,
+    };
     m.rim(sketch, chance);
     silhouette(sketch, chance, &mesh[0], m.origin, RESO[0] as f64 * 4.0);
     foot(sketch, chance, &mesh, m.origin);
     let sha = chance.choice(&[0, 0, 0, 0, 5]);
     let shifted: Mesh = mesh.iter().map(|row| translated(row, xoff, yoff)).collect();
-    texture(sketch, chance, &shifted, &TextureStyle { tex: a.tex, sha, ..Default::default() });
+    texture(
+        sketch,
+        chance,
+        &shifted,
+        &TextureStyle {
+            tex: a.tex,
+            sha,
+            ..Default::default()
+        },
+    );
     m.crown(sketch, chance);
     if a.veg {
         m.forest(sketch, chance);
@@ -143,7 +169,15 @@ impl Mount<'_> {
             let ht = ht * 0.5 + chance.random() * ht * 0.5;
             let bc = chance.random() * 0.1;
             let [x, y] = self.at(p);
-            tree03(sketch, chance, x, y, ht, &|t| t * bc, foliage_ink(chance, p, 0.3));
+            tree03(
+                sketch,
+                chance,
+                x,
+                y,
+                ht,
+                &|t| t * bc,
+                foliage_ink(chance, p, 0.3),
+            );
         }
     }
 
@@ -184,7 +218,9 @@ impl Mount<'_> {
     /// A rare pagoda on the summit.
     fn pagodas(&self, sketch: &mut Sketch, chance: &mut Chance) {
         let spots = sites(self.mesh, |i, j| {
-            i == 1 && (j as f64 - self.mesh[i].len() as f64 / 2.0).abs() < 1.0 && chance.random() < 0.02
+            i == 1
+                && (j as f64 - self.mesh[i].len() as f64 / 2.0).abs() < 1.0
+                && chance.random() < 0.02
         });
         for p in spots {
             let [x, y] = self.at(p);
@@ -208,10 +244,17 @@ impl Mount<'_> {
 
     /// Boulders around the base.
     fn rocks(&self, sketch: &mut Sketch, chance: &mut Chance) {
-        let spots = sites(self.mesh, |i, j| (j == 0 || j == self.mesh[i].len() - 1) && chance.random() < 0.1);
+        let spots = sites(self.mesh, |i, j| {
+            (j == 0 || j == self.mesh[i].len() - 1) && chance.random() < 0.1
+        });
         for p in spots {
             let [x, y] = self.at(p);
-            let args = RockArgs { wid: 20.0 + chance.random() * 20.0, hei: 20.0 + chance.random() * 20.0, sha: 2, ..Default::default() };
+            let args = RockArgs {
+                wid: 20.0 + chance.random() * 20.0,
+                hei: 20.0 + chance.random() * 20.0,
+                sha: 2,
+                ..Default::default()
+            };
             rock(sketch, chance, x, y, self.seed, &args);
         }
     }
@@ -235,7 +278,17 @@ mod tests {
     #[test]
     fn mountain_draws_a_lot() {
         let (mut s, mut c) = (Sketch::new(), Chance::from_seed(2));
-        mountain(&mut s, &mut c, 0.0, 500.0, 1.0, &MountainArgs { hei: Some(300.0), ..Default::default() });
+        mountain(
+            &mut s,
+            &mut c,
+            0.0,
+            500.0,
+            1.0,
+            &MountainArgs {
+                hei: Some(300.0),
+                ..Default::default()
+            },
+        );
         assert!(s.len() > 200, "only {}", s.len());
         assert!(s.polygons.iter().any(|p| p.style.fill == Paint::Paper));
     }

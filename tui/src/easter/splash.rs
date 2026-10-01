@@ -54,7 +54,11 @@ pub fn veil(t: Duration) -> f32 {
 }
 
 pub fn lerp(a: Rgb, b: Rgb, t: f32) -> Rgb {
-    [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
+    [
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+    ]
 }
 
 /// Centred dedication text drawn over whatever is underneath.
@@ -104,7 +108,12 @@ mod tests {
         let area = Rect::new(0, 0, 20, 5);
         let mut buf = Buffer::empty(area);
         let lines = vec!["abcd".to_string()];
-        SplashText { lines: &lines, alpha: 1.0, palette: Palette::TrueColor }.render(area, &mut buf);
+        SplashText {
+            lines: &lines,
+            alpha: 1.0,
+            palette: Palette::TrueColor,
+        }
+        .render(area, &mut buf);
         assert_eq!(buf[(8, 2)].symbol(), "a");
     }
 }

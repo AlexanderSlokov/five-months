@@ -27,8 +27,15 @@ impl World {
     /// Example: `World::new("naught")`.
     pub fn new(seed_text: &str) -> Self {
         let world_seed = seed_from_text(seed_text);
-        let planner = Planner { world_seed, perlin: Arc::new(world_perlin(world_seed)) };
-        Self { seed_text: seed_text.to_string(), planner, chunks: BTreeMap::new() }
+        let planner = Planner {
+            world_seed,
+            perlin: Arc::new(world_perlin(world_seed)),
+        };
+        Self {
+            seed_text: seed_text.to_string(),
+            planner,
+            chunks: BTreeMap::new(),
+        }
     }
 
     fn chunk_range(xmin: f64, xmax: f64) -> std::ops::RangeInclusive<i64> {
@@ -39,7 +46,9 @@ impl World {
 
     /// Chunks that `[xmin, xmax]` needs and that are not generated yet.
     pub fn missing(&self, xmin: f64, xmax: f64) -> Vec<i64> {
-        Self::chunk_range(xmin, xmax).filter(|k| !self.chunks.contains_key(k)).collect()
+        Self::chunk_range(xmin, xmax)
+            .filter(|k| !self.chunks.contains_key(k))
+            .collect()
     }
 
     /// Generates chunk `k` now; returns the world x span it painted on
@@ -58,7 +67,10 @@ impl World {
         if self.chunks.contains_key(&k) {
             return None;
         }
-        let span = scenes.iter().map(|s| [s.bbox[0], s.bbox[2]]).reduce(|a, b| [a[0].min(b[0]), a[1].max(b[1])]);
+        let span = scenes
+            .iter()
+            .map(|s| [s.bbox[0], s.bbox[2]])
+            .reduce(|a, b| [a[0].min(b[0]), a[1].max(b[1])]);
         self.chunks.insert(k, scenes);
         span
     }
@@ -88,7 +100,10 @@ impl World {
             .filter(|s| s.bbox[2] >= xmin && s.bbox[0] <= xmax)
             .collect();
         scenes.sort_by(|a, b| a.depth.total_cmp(&b.depth));
-        scenes.into_iter().flat_map(|s| &s.sketch.polygons).collect()
+        scenes
+            .into_iter()
+            .flat_map(|s| &s.sketch.polygons)
+            .collect()
     }
 
     pub fn chunk_count(&self) -> usize {

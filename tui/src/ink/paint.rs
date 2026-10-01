@@ -60,7 +60,13 @@ mod tests {
     #[test]
     fn with_alpha_keeps_pigment() {
         let p = Paint::ink(120, 0.3).with_alpha(0.5);
-        assert_eq!(p, Paint::Ink { gray: 120, alpha: 0.5 });
+        assert_eq!(
+            p,
+            Paint::Ink {
+                gray: 120,
+                alpha: 0.5
+            }
+        );
         assert_eq!(Paint::Paper.with_alpha(0.1), Paint::Paper);
     }
 

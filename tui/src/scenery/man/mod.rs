@@ -25,7 +25,17 @@ use crate::ink::{Paint, PolyStyle, Sketch};
 use expand::expand;
 
 /// Parent joint of each joint (the original's nested `sct` object).
-const PARENT: [Option<usize>; 9] = [None, Some(0), Some(1), Some(0), Some(3), Some(1), Some(5), Some(1), Some(7)];
+const PARENT: [Option<usize>; 9] = [
+    None,
+    Some(0),
+    Some(1),
+    Some(0),
+    Some(3),
+    Some(1),
+    Some(5),
+    Some(1),
+    Some(7),
+];
 
 /// Arguments of `man(x, y, args)`.
 #[derive(Clone, Copy, Debug)]
@@ -56,7 +66,14 @@ impl ManArgs {
             -PI / 4.0,
         ];
         let len = [0.0, 30.0, 20.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0];
-        Self { sca: 0.5, hat: Hat::Bamboo, item: Item::None, fli: true, ang, len }
+        Self {
+            sca: 0.5,
+            hat: Hat::Bamboo,
+            item: Item::None,
+            fli: true,
+            ang,
+            len,
+        }
     }
 }
 
@@ -89,8 +106,12 @@ pub fn man(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64, a: &M
     let g = |v: Pt| [flip * v[0] + xoff, v[1] + yoff];
     a.item.draw(sketch, chance, g(pts[8]), g(pts[6]), a.fli);
     let sca = a.sca;
-    let sleeve = move |x: f64| sca * 8.0 * ((0.5 * x * PI).sin() * (x * PI).sin().max(0.0).powf(0.1) + (1.0 - x) * 0.4);
-    let body = move |x: f64| sca * 11.0 * ((0.5 * x * PI).sin() * (x * PI).sin().max(0.0).powf(0.1) + (1.0 - x) * 0.5);
+    let sleeve = move |x: f64| {
+        sca * 8.0 * ((0.5 * x * PI).sin() * (x * PI).sin().max(0.0).powf(0.1) + (1.0 - x) * 0.4)
+    };
+    let body = move |x: f64| {
+        sca * 11.0 * ((0.5 * x * PI).sin() * (x * PI).sin().max(0.0).powf(0.1) + (1.0 - x) * 0.5)
+    };
     let head = move |x: f64| sca * 7.0 * (0.25 - (x - 0.5).powi(2)).max(0.0).powf(0.3);
     cloth(sketch, chance, &[pts[1], pts[7], pts[8]], &sleeve, &g);
     cloth(sketch, chance, &[pts[1], pts[0], pts[3], pts[4]], &body, &g);
@@ -101,13 +122,28 @@ pub fn man(sketch: &mut Sketch, chance: &mut Chance, xoff: f64, yoff: f64, a: &M
 }
 
 /// A garment piece around a limb: paper fill plus two edge strokes.
-fn cloth(sketch: &mut Sketch, chance: &mut Chance, limb: &[Pt], width: &dyn Fn(f64) -> f64, g: &dyn Fn(Pt) -> Pt) {
+fn cloth(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    limb: &[Pt],
+    width: &dyn Fn(f64) -> f64,
+    g: &dyn Fn(Pt) -> Pt,
+) {
     let (l, r) = expand(&bezmh(limb, 2.0), width);
     let fill: Vec<Pt> = l.iter().chain(r.iter().rev()).map(|p| g(*p)).collect();
     sketch.poly(fill, PolyStyle::paper());
     for (edge, alpha) in [(&l, 0.5), (&r, 0.6)] {
         let line: Vec<Pt> = edge.iter().map(|p| g(*p)).collect();
-        stroke(sketch, chance, &line, &StrokeStyle { wid: 1.0, col: Paint::ink(100, alpha), ..Default::default() });
+        stroke(
+            sketch,
+            chance,
+            &line,
+            &StrokeStyle {
+                wid: 1.0,
+                col: Paint::ink(100, alpha),
+                ..Default::default()
+            },
+        );
     }
 }
 

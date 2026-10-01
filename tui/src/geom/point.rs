@@ -42,7 +42,12 @@ pub fn bounds(pts: &[Pt]) -> Option<[f64; 4]> {
     let first = pts.first()?;
     let init = [first[0], first[1], first[0], first[1]];
     Some(pts.iter().fold(init, |b, p| {
-        [b[0].min(p[0]), b[1].min(p[1]), b[2].max(p[0]), b[3].max(p[1])]
+        [
+            b[0].min(p[0]),
+            b[1].min(p[1]),
+            b[2].max(p[0]),
+            b[3].max(p[1]),
+        ]
     }))
 }
 
@@ -83,7 +88,10 @@ mod tests {
 
     #[test]
     fn bounds_of_points() {
-        assert_eq!(bounds(&[[1.0, 5.0], [-2.0, 3.0]]), Some([-2.0, 3.0, 1.0, 5.0]));
+        assert_eq!(
+            bounds(&[[1.0, 5.0], [-2.0, 3.0]]),
+            Some([-2.0, 3.0, 1.0, 5.0])
+        );
         assert_eq!(bounds(&[]), None);
     }
 }

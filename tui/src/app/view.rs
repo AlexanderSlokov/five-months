@@ -46,16 +46,38 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
     let splash_t = state.splash.as_ref().map(|s| s.started.elapsed());
     if let Some(plate) = &state.plate {
         let veil = splash_t.map_or(0.0, veil);
-        frame.render_widget(LandscapeWidget { plate, palette: state.palette, veil }, area);
+        frame.render_widget(
+            LandscapeWidget {
+                plate,
+                palette: state.palette,
+                veil,
+            },
+            area,
+        );
     }
     if let (Some(s), Some(alpha)) = (&state.splash, splash_t.and_then(text_alpha)) {
-        frame.render_widget(SplashText { lines: &s.lines, alpha, palette: state.palette }, area);
+        frame.render_widget(
+            SplashText {
+                lines: &s.lines,
+                alpha,
+                palette: state.palette,
+            },
+            area,
+        );
     }
     if let (Some(age), true) = (state.birthday, state.splash.is_none()) {
         seal(frame, state, area, age);
     }
     if area != full {
-        status_line(frame, state, Rect { y: area.bottom(), height: 1, ..full });
+        status_line(
+            frame,
+            state,
+            Rect {
+                y: area.bottom(),
+                height: 1,
+                ..full
+            },
+        );
     }
     if state.show_help {
         help(frame, state, area);
@@ -63,12 +85,20 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
 }
 
 fn paper_style(state: &AppState) -> Style {
-    Style::default().fg(state.palette.color(INK)).bg(state.palette.color(PAPER))
+    Style::default()
+        .fg(state.palette.color(INK))
+        .bg(state.palette.color(PAPER))
 }
 
 fn seal(frame: &mut Frame, state: &AppState, area: Rect, age: i32) {
     if let Some(at) = Seal::placement(area) {
-        frame.render_widget(Seal { caption: format!("Naught · {age}"), palette: state.palette }, at);
+        frame.render_widget(
+            Seal {
+                caption: format!("Naught · {age}"),
+                palette: state.palette,
+            },
+            at,
+        );
     }
 }
 
@@ -81,10 +111,17 @@ fn status_line(frame: &mut Frame, state: &AppState, area: Rect) {
             state.cam.x,
             state.cam.marker.name(),
             if state.auto { "auto " } else { "" },
-            if state.workers.busy() { "· painting…" } else { "" },
+            if state.workers.busy() {
+                "· painting…"
+            } else {
+                ""
+            },
         ),
     };
-    frame.render_widget(Paragraph::new(Line::from(text)).style(paper_style(state)), area);
+    frame.render_widget(
+        Paragraph::new(Line::from(text)).style(paper_style(state)),
+        area,
+    );
 }
 
 fn help(frame: &mut Frame, state: &AppState, area: Rect) {
@@ -92,9 +129,16 @@ fn help(frame: &mut Frame, state: &AppState, area: Rect) {
     if area.width < w || area.height < h {
         return;
     }
-    let at = Rect::new(area.x + (area.width - w) / 2, area.y + (area.height - h) / 2, w, h);
+    let at = Rect::new(
+        area.x + (area.width - w) / 2,
+        area.y + (area.height - h) / 2,
+        w,
+        h,
+    );
     let lines: Vec<Line> = HELP.iter().map(|l| Line::from(format!(" {l}"))).collect();
-    let block = Block::bordered().title(" five months ").style(paper_style(state));
+    let block = Block::bordered()
+        .title(" five months ")
+        .style(paper_style(state));
     frame.render_widget(Clear, at);
     frame.render_widget(Paragraph::new(lines).block(block), at);
 }
@@ -123,7 +167,13 @@ mod tests {
         s.show_status = true;
         let mut term = Terminal::new(TestBackend::new(80, 24)).unwrap();
         term.draw(|f| draw(f, &s)).unwrap();
-        let text: String = term.backend().buffer().content().iter().map(|c| c.symbol()).collect();
+        let text: String = term
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|c| c.symbol())
+            .collect();
         assert!(text.contains("seedling"));
         assert!(text.contains("auto-scroll"));
     }

@@ -45,8 +45,13 @@ fn initial_state(launch: &Launch) -> AppState {
         state.birthday = Some(turning_age(date));
     }
     if launch.splash {
-        let line = state.birthday.map(|age| format!("Happy birthday, Naught — {age} years."));
-        state.splash = Some(SplashState { started: Instant::now(), lines: dedication(line) });
+        let line = state
+            .birthday
+            .map(|age| format!("Happy birthday, Naught — {age} years."));
+        state.splash = Some(SplashState {
+            started: Instant::now(),
+            lines: dedication(line),
+        });
     }
     state.auto = true;
     state
@@ -55,13 +60,26 @@ fn initial_state(launch: &Launch) -> AppState {
 fn event_loop(terminal: &mut DefaultTerminal, state: &mut AppState) -> Result<(), String> {
     let mut last = Instant::now();
     while !state.quit {
-        let size = terminal.size().map_err(|e| format!("cannot read terminal size: {e}"))?;
+        let size = terminal
+            .size()
+            .map_err(|e| format!("cannot read terminal size: {e}"))?;
         let full = ratatui::layout::Rect::new(0, 0, size.width, size.height);
         let area = view::landscape_area(state, full);
         state.feed_world(area.width, area.height);
-        state.plate = Some(state.darkroom.develop(&state.world, &state.cam, area.width, area.height));
-        terminal.draw(|f| view::draw(f, state)).map_err(|e| format!("cannot draw: {e}"))?;
-        wait_for_input(state, FRAME.saturating_sub(last.elapsed()), (area.width, area.height))?;
+        state.plate = Some(state.darkroom.develop(
+            &state.world,
+            &state.cam,
+            area.width,
+            area.height,
+        ));
+        terminal
+            .draw(|f| view::draw(f, state))
+            .map_err(|e| format!("cannot draw: {e}"))?;
+        wait_for_input(
+            state,
+            FRAME.saturating_sub(last.elapsed()),
+            (area.width, area.height),
+        )?;
         let now = Instant::now();
         state.tick(now - last);
         end_splash_if_done(state);
@@ -78,6 +96,7 @@ fn wait_for_input(state: &mut AppState, timeout: Duration, size: (u16, u16)) -> 
     let ev = event::read().map_err(|e| format!("cannot read input: {e}"))?;
     let Event::Key(key) = ev else { return Ok(()) };
     if state.splash.take().is_some() {
+        state.notify("space pause · ←/→ wander · ? help");
         return Ok(()); // any key skips the dedication
     }
     if let Some(action) = keys::action_for(key) {
@@ -87,8 +106,12 @@ fn wait_for_input(state: &mut AppState, timeout: Duration, size: (u16, u16)) -> 
 }
 
 fn end_splash_if_done(state: &mut AppState) {
-    let done = state.splash.as_ref().is_some_and(|s| crate::easter::splash::text_alpha(s.started.elapsed()).is_none());
+    let done = state
+        .splash
+        .as_ref()
+        .is_some_and(|s| crate::easter::splash::text_alpha(s.started.elapsed()).is_none());
     if done {
         state.splash = None;
+        state.notify("space pause · ←/→ wander · ? help");
     }
 }

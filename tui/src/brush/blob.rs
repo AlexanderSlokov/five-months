@@ -55,13 +55,18 @@ impl Default for BlobStyle<'_> {
 /// Outline of a blob centred on `(x, y)` (the `ret: 1` mode).
 pub fn blob_outline(chance: &mut Chance, x: f64, y: f64, style: &BlobStyle) -> Vec<Pt> {
     let n0 = chance.random() * 10.0;
-    let mut ns: Vec<f64> = (0..=RESO).map(|i| chance.noise2(i as f64 * 0.05, n0)).collect();
+    let mut ns: Vec<f64> = (0..=RESO)
+        .map(|i| chance.noise2(i as f64 * 0.05, n0))
+        .collect();
     loop_noise(&mut ns);
     (0..=RESO)
         .map(|i| {
             let (l, a) = polar(style, i);
             let k = ns[i] * style.noi + (1.0 - style.noi);
-            [x + (a + style.ang).cos() * l * k, y + (a + style.ang).sin() * l * k]
+            [
+                x + (a + style.ang).cos() * l * k,
+                y + (a + style.ang).sin() * l * k,
+            ]
         })
         .collect()
 }
@@ -94,7 +99,11 @@ mod tests {
     #[test]
     fn blob_stays_within_length() {
         let mut c = Chance::from_seed(2);
-        let style = BlobStyle { len: 30.0, wid: 6.0, ..Default::default() };
+        let style = BlobStyle {
+            len: 30.0,
+            wid: 6.0,
+            ..Default::default()
+        };
         let pts = blob_outline(&mut c, 100.0, 50.0, &style);
         assert!(pts.iter().all(|p| (p[0] - 100.0).abs() <= 15.0 + 1e-9));
     }

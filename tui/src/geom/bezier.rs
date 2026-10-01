@@ -22,9 +22,17 @@ pub fn bezmh(ctrl: &[Pt], w: f64) -> Vec<Pt> {
 }
 
 fn piece(ctrl: &[Pt], j: usize, w: f64, last: bool) -> Vec<Pt> {
-    let p0 = if j == 0 { ctrl[0] } else { mid_pt(&[ctrl[j], ctrl[j + 1]]) };
+    let p0 = if j == 0 {
+        ctrl[0]
+    } else {
+        mid_pt(&[ctrl[j], ctrl[j + 1]])
+    };
     let p1 = ctrl[j + 1];
-    let p2 = if last { ctrl[j + 2] } else { mid_pt(&[ctrl[j + 1], ctrl[j + 2]]) };
+    let p2 = if last {
+        ctrl[j + 2]
+    } else {
+        mid_pt(&[ctrl[j + 1], ctrl[j + 2]])
+    };
     let count = STEPS + usize::from(last);
     (0..count)
         .map(|i| rational_quad(p0, p1, p2, w, i as f64 / STEPS as f64))

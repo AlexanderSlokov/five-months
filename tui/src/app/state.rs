@@ -68,7 +68,10 @@ impl AppState {
 
     /// Shows `text` in the status line for a few seconds.
     pub fn notify(&mut self, text: impl Into<String>) {
-        self.notice = Some(Notice { text: text.into(), until: Instant::now() + Duration::from_secs(4) });
+        self.notice = Some(Notice {
+            text: text.into(),
+            until: Instant::now() + Duration::from_secs(4),
+        });
     }
 
     /// Moves the scroll by `dx` world units.
@@ -90,7 +93,11 @@ impl AppState {
         if self.auto && self.splash.is_none() {
             self.scroll(self.speed * dt.as_secs_f64());
         }
-        if self.notice.as_ref().is_some_and(|n| Instant::now() > n.until) {
+        if self
+            .notice
+            .as_ref()
+            .is_some_and(|n| Instant::now() > n.until)
+        {
             self.notice = None;
         }
     }
@@ -114,7 +121,8 @@ impl AppState {
         for k in missing {
             self.workers.request(self.epoch, self.world.planner(), k);
         }
-        self.world.forget_far(xmin, xmax, 8.0 * (xmax - xmin) + 4000.0);
+        self.world
+            .forget_far(xmin, xmax, 8.0 * (xmax - xmin) + 4000.0);
     }
 }
 
@@ -138,7 +146,10 @@ mod tests {
     fn splash_holds_auto_scroll() {
         let mut s = state();
         s.auto = true;
-        s.splash = Some(SplashState { started: Instant::now(), lines: vec![] });
+        s.splash = Some(SplashState {
+            started: Instant::now(),
+            lines: vec![],
+        });
         s.tick(Duration::from_secs(1));
         assert_eq!(s.cam.x, 0.0);
     }

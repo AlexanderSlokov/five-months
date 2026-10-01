@@ -30,7 +30,9 @@ impl Coverage {
         if pts.len() < 3 {
             return;
         }
-        let (lo, hi) = pts.iter().fold((f64::MAX, f64::MIN), |(lo, hi), p| (lo.min(p[1]), hi.max(p[1])));
+        let (lo, hi) = pts.iter().fold((f64::MAX, f64::MIN), |(lo, hi), p| {
+            (lo.min(p[1]), hi.max(p[1]))
+        });
         let first = ((lo - 0.5).floor() as i64 - self.y0).max(0) as usize;
         let end = ((hi + 0.5).ceil() as i64 - self.y0).clamp(0, self.h as i64) as usize;
         let mut crossings = std::mem::take(&mut self.crossings);
@@ -75,9 +77,11 @@ impl Coverage {
 
     /// Iterates covered pixels as absolute `(x, y)`.
     pub fn covered(&self) -> impl Iterator<Item = (i64, i64)> + '_ {
-        self.bits.iter().enumerate().filter(|(_, b)| **b).map(|(i, _)| {
-            (self.x0 + (i % self.w) as i64, self.y0 + (i / self.w) as i64)
-        })
+        self.bits
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| **b)
+            .map(|(i, _)| (self.x0 + (i % self.w) as i64, self.y0 + (i / self.w) as i64))
     }
 }
 
@@ -87,7 +91,13 @@ fn collect_crossings(pts: &[Pt], y: f64, out: &mut Vec<(f64, i32)>) {
     let n = pts.len();
     for i in 0..n {
         let (a, b) = (pts[i], pts[(i + 1) % n]);
-        let dir = if a[1] <= y && y < b[1] { 1 } else if b[1] <= y && y < a[1] { -1 } else { 0 };
+        let dir = if a[1] <= y && y < b[1] {
+            1
+        } else if b[1] <= y && y < a[1] {
+            -1
+        } else {
+            0
+        };
         if dir != 0 {
             let x = a[0] + (y - a[1]) / (b[1] - a[1]) * (b[0] - a[0]);
             out.push((x, dir));

@@ -42,13 +42,21 @@ impl ChunkWorkers {
             let (rx, tx) = (job_rx.clone(), done_tx.clone());
             thread::spawn(move || work(&rx, &tx));
         }
-        Self { jobs, done, pending: HashSet::new() }
+        Self {
+            jobs,
+            done,
+            pending: HashSet::new(),
+        }
     }
 
     /// Queues `chunk` unless it is already on its way.
     pub fn request(&mut self, epoch: u64, planner: &Planner, chunk: i64) {
         if self.pending.insert((epoch, chunk)) {
-            let _ = self.jobs.send(Job { epoch, planner: planner.clone(), chunk });
+            let _ = self.jobs.send(Job {
+                epoch,
+                planner: planner.clone(),
+                chunk,
+            });
         }
     }
 
@@ -79,7 +87,14 @@ fn work(jobs: &Mutex<Receiver<Job>>, done: &Sender<Done>) {
         };
         let Ok(job) = job else { return };
         let scenes = chunk_scenes(&job.planner, job.chunk);
-        if done.send(Done { epoch: job.epoch, chunk: job.chunk, scenes }).is_err() {
+        if done
+            .send(Done {
+                epoch: job.epoch,
+                chunk: job.chunk,
+                scenes,
+            })
+            .is_err()
+        {
             return;
         }
     }

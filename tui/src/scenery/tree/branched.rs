@@ -37,19 +37,27 @@ fn pick04(chance: &mut Chance, i: usize, n: usize, hei: f64) -> Option<Limb> {
         return None;
     }
     let ang = PI * 0.2 - PI * 1.4 * f64::from(u8::from(i as f64 > nf / 2.0));
-    Some(Limb { ang, hei: hei * (chance.random() + 1.0) * 0.3, ben: PI * 0.2 })
+    Some(Limb {
+        ang,
+        hei: hei * (chance.random() + 1.0) * 0.3,
+        ben: PI * 0.2,
+    })
 }
 
 fn pick05(chance: &mut Chance, i: usize, n: usize, hei: f64) -> Option<Limb> {
     let nf = n as f64;
     let p = (i as f64 - nf * 0.5).abs() / (nf * 0.5);
-    let band = i as f64 >= nf * 0.2 && i as f64 <= nf * 0.8 && i % 3 == 0;
+    let band = i as f64 >= nf * 0.2 && i as f64 <= nf * 0.8 && i.is_multiple_of(3);
     if !((band && chance.random() > p) || i as f64 == nf / 2.0 - 1.0) {
         return None;
     }
     let bar = chance.random() * 0.2;
     let ang = -bar * PI - (1.0 - bar * 2.0) * PI * f64::from(u8::from(i as f64 > nf / 2.0));
-    Some(Limb { ang, hei: hei * (0.3 * p - chance.random() * 0.05), ben: 0.5 })
+    Some(Limb {
+        ang,
+        hei: hei * (0.3 * p - chance.random() * 0.05),
+        ben: 0.5,
+    })
 }
 
 const TREE04: Species = Species {
@@ -89,15 +97,36 @@ struct Layers {
     twigs: Sketch,
 }
 
-fn branched(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, hei: f64, wid: f64, sp: &Species) {
-    let mut layers = Layers { bark: Sketch::new(), twigs: Sketch::new() };
-    let trunk = branch(chance, &BranchArgs { hei, wid, ang: -PI / 2.0, ben: sp.trunk_ben, ..Default::default() });
+fn branched(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    origin: Pt,
+    hei: f64,
+    wid: f64,
+    sp: &Species,
+) {
+    let mut layers = Layers {
+        bark: Sketch::new(),
+        twigs: Sketch::new(),
+    };
+    let trunk = branch(
+        chance,
+        &BranchArgs {
+            hei,
+            wid,
+            ang: -PI / 2.0,
+            ben: sp.trunk_ben,
+            ..Default::default()
+        },
+    );
     barkify(&mut layers.bark, chance, origin, &trunk);
     let trunk = joined_reversed(&trunk[0], &trunk[1]);
     let mut outline = Vec::with_capacity(trunk.len());
     for (i, &at) in trunk.iter().enumerate() {
         match (sp.pick)(chance, i, trunk.len(), hei) {
-            Some(limb) => outline.extend(sprout(&mut layers, chance, origin, at, &limb, hei, wid, sp)),
+            Some(limb) => {
+                outline.extend(sprout(&mut layers, chance, origin, at, &limb, hei, wid, sp))
+            }
             None => outline.push(at),
         }
     }
@@ -108,8 +137,23 @@ fn branched(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, hei: f64, wid:
 
 /// Grows one limb at trunk point `at`; returns its outline (trunk-relative).
 #[allow(clippy::too_many_arguments)]
-fn sprout(layers: &mut Layers, chance: &mut Chance, origin: Pt, at: Pt, limb: &Limb, hei: f64, wid: f64, sp: &Species) -> Vec<Pt> {
-    let args = BranchArgs { hei: limb.hei, wid: wid * 0.5, ang: limb.ang, ben: limb.ben, ..Default::default() };
+fn sprout(
+    layers: &mut Layers,
+    chance: &mut Chance,
+    origin: Pt,
+    at: Pt,
+    limb: &Limb,
+    hei: f64,
+    wid: f64,
+    sp: &Species,
+) -> Vec<Pt> {
+    let args = BranchArgs {
+        hei: limb.hei,
+        wid: wid * 0.5,
+        ang: limb.ang,
+        ben: limb.ben,
+        ..Default::default()
+    };
     let [mut l, mut r] = branch(chance, &args);
     l.remove(0);
     r.remove(0);
@@ -127,10 +171,19 @@ fn sprout(layers: &mut Layers, chance: &mut Chance, origin: Pt, at: Pt, limb: &L
     };
     for (j, p) in l.iter().enumerate() {
         if (sp.twig_at)(chance, j, l.len()) {
-            twig(&mut layers.twigs, chance, [base[0] + p[0], base[1] + p[1]], sp.twig_dep, &twig_args);
+            twig(
+                &mut layers.twigs,
+                chance,
+                [base[0] + p[0], base[1] + p[1]],
+                sp.twig_dep,
+                &twig_args,
+            );
         }
     }
-    joined_reversed(&l, &r).iter().map(|p| [p[0] + at[0], p[1] + at[1]]).collect()
+    joined_reversed(&l, &r)
+        .iter()
+        .map(|p| [p[0] + at[0], p[1] + at[1]])
+        .collect()
 }
 
 #[cfg(test)]

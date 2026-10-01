@@ -19,11 +19,29 @@ use crate::ink::{Paint, Sketch};
 /// A constant-width, noise-wobbled timber line (the strokes of `box`,
 /// `roof` and `pagroof`).
 fn beam(sketch: &mut Sketch, chance: &mut Chance, pts: &[Pt], origin: Pt, wei: f64, alpha: f64) {
-    let style = StrokeStyle { col: Paint::ink(100, alpha), noi: 1.0, wid: wei, profile: &flat_profile, ..Default::default() };
-    stroke(sketch, chance, &translated(pts, origin[0], origin[1]), &style);
+    let style = StrokeStyle {
+        col: Paint::ink(100, alpha),
+        noi: 1.0,
+        wid: wei,
+        profile: &flat_profile,
+        ..Default::default()
+    };
+    stroke(
+        sketch,
+        chance,
+        &translated(pts, origin[0], origin[1]),
+        &style,
+    );
 }
 
-fn beams(sketch: &mut Sketch, chance: &mut Chance, lines: &[Vec<Pt>], origin: Pt, wei: f64, alpha: f64) {
+fn beams(
+    sketch: &mut Sketch,
+    chance: &mut Chance,
+    lines: &[Vec<Pt>],
+    origin: Pt,
+    wei: f64,
+    alpha: f64,
+) {
     for line in lines {
         beam(sketch, chance, line, origin, wei, alpha);
     }

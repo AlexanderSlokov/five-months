@@ -31,13 +31,26 @@ fn silhouette(sketch: &mut Sketch, chance: &mut Chance, ridge: &[Pt], origin: Pt
     let mut fill = translated(ridge, origin[0], origin[1]);
     fill.push([origin[0], origin[1] + base]);
     sketch.poly(fill, PolyStyle::paper());
-    let style = StrokeStyle { col: Paint::ink(100, 0.3), noi: 1.0, wid: 3.0, ..Default::default() };
-    stroke(sketch, chance, &translated(ridge, origin[0], origin[1]), &style);
+    let style = StrokeStyle {
+        col: Paint::ink(100, 0.3),
+        noi: 1.0,
+        wid: 3.0,
+        ..Default::default()
+    };
+    stroke(
+        sketch,
+        chance,
+        &translated(ridge, origin[0], origin[1]),
+        &style,
+    );
 }
 
 /// Vegetation ink: grey whose opacity drifts with position.
 fn foliage_ink(chance: &Chance, p: Pt, base: f64) -> Paint {
-    Paint::ink(100, chance.noise2(0.01 * p[0], 0.01 * p[1]) * 0.5 * 0.3 + base)
+    Paint::ink(
+        100,
+        chance.noise2(0.01 * p[0], 0.01 * p[1]) * 0.5 * 0.3 + base,
+    )
 }
 
 #[cfg(test)]
@@ -47,7 +60,9 @@ mod tests {
     #[test]
     fn silhouette_is_paper_then_stroke() {
         let (mut s, mut c) = (Sketch::new(), Chance::from_seed(1));
-        let ridge: Vec<Pt> = (0..10).map(|i| [i as f64 * 10.0 - 50.0, -((i as f64 - 5.0).abs())]).collect();
+        let ridge: Vec<Pt> = (0..10)
+            .map(|i| [i as f64 * 10.0 - 50.0, -((i as f64 - 5.0).abs())])
+            .collect();
         silhouette(&mut s, &mut c, &ridge, [100.0, 100.0], 40.0);
         assert_eq!(s.len(), 2);
         assert_eq!(s.polygons[0].style.fill, Paint::Paper);

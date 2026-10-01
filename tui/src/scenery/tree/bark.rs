@@ -21,8 +21,18 @@ pub fn barkify(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, limb: &[Vec
         let at = [at[0] + origin[0], at[1] + origin[1]];
         mark(sketch, chance, at, p, (a0 + a1) / 2.0);
         if chance.random() < 0.05 {
-            let (base, a) = if chance.random() < 0.5 { (l[i], a0) } else { (r[i], a1) };
-            scar(sketch, chance, [base[0] + origin[0], base[1] + origin[1]], a, a0);
+            let (base, a) = if chance.random() < 0.5 {
+                (l[i], a0)
+            } else {
+                (r[i], a1)
+            };
+            scar(
+                sketch,
+                chance,
+                [base[0] + origin[0], base[1] + origin[1]],
+                a,
+                a0,
+            );
         }
     }
     ridges(sketch, chance, origin, limb);
@@ -32,7 +42,14 @@ pub fn barkify(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, limb: &[Vec
 fn mark(sketch: &mut Sketch, chance: &mut Chance, at: Pt, p: f64, ang: f64) {
     let off_centre = (p - 0.5).abs() * 10.0;
     if chance.random() < 0.2 {
-        let style = BlobStyle { noi: 1.0, len: 15.0, wid: 6.0 - off_centre, ang, col: Paint::ink(100, 0.6), ..Default::default() };
+        let style = BlobStyle {
+            noi: 1.0,
+            len: 15.0,
+            wid: 6.0 - off_centre,
+            ang,
+            col: Paint::ink(100, 0.6),
+            ..Default::default()
+        };
         blob(sketch, chance, at[0], at[1], &style);
     } else {
         crack(sketch, chance, at, 5.0 - off_centre, ang);
@@ -43,10 +60,26 @@ fn mark(sketch: &mut Sketch, chance: &mut Chance, at: Pt, p: f64, ang: f64) {
 /// wavy thin stroke.
 fn crack(sketch: &mut Sketch, chance: &mut Chance, at: Pt, wid: f64, ang: f64) {
     let len = 10.0 + 10.0 * chance.random();
-    let outline = blob_outline(chance, at[0], at[1], &BlobStyle { len, wid, ang, ..Default::default() });
+    let outline = blob_outline(
+        chance,
+        at[0],
+        at[1],
+        &BlobStyle {
+            len,
+            wid,
+            ang,
+            ..Default::default()
+        },
+    );
     let fr = chance.random();
     let wave = move |x: f64| ((x + fr) * PI * 3.0).sin();
-    let style = StrokeStyle { wid: 0.8, noi: 0.0, col: Paint::ink(100, 0.4), out: 0.0, profile: &wave };
+    let style = StrokeStyle {
+        wid: 0.8,
+        noi: 0.0,
+        col: Paint::ink(100, 0.4),
+        out: 0.0,
+        profile: &wave,
+    };
     stroke(sketch, chance, &outline, &style);
 }
 
@@ -57,8 +90,20 @@ fn scar(sketch: &mut Sketch, chance: &mut Chance, base: Pt, a: f64, a0: f64) {
     while j < jl {
         let d = (j - jl / 2.0) * 4.0;
         let len = 4.0 + 6.0 * chance.random();
-        let style = BlobStyle { wid: 4.0, len, ang: a0 + PI / 2.0, col: Paint::ink(100, 0.6), ..Default::default() };
-        blob(sketch, chance, base[0] + a.cos() * d, base[1] + a.sin() * d, &style);
+        let style = BlobStyle {
+            wid: 4.0,
+            len,
+            ang: a0 + PI / 2.0,
+            col: Paint::ink(100, 0.6),
+            ..Default::default()
+        };
+        blob(
+            sketch,
+            chance,
+            base[0] + a.cos() * d,
+            base[1] + a.sin() * d,
+            &style,
+        );
         j += 1.0;
     }
 }
@@ -66,7 +111,11 @@ fn scar(sketch: &mut Sketch, chance: &mut Chance, base: Pt, a: f64, a0: f64) {
 /// Long ridge lines: the outline cut into random runs, each subdivided
 /// and pushed around by noise.
 fn ridges(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, limb: &[Vec<Pt>; 2]) {
-    let outline: Vec<Pt> = limb[0].iter().chain(limb[1].iter().rev()).copied().collect();
+    let outline: Vec<Pt> = limb[0]
+        .iter()
+        .chain(limb[1].iter().rev())
+        .copied()
+        .collect();
     let mut runs: Vec<Vec<Pt>> = vec![Vec::new()];
     for p in outline {
         if chance.random() < 0.5 {
@@ -75,7 +124,12 @@ fn ridges(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, limb: &[Vec<Pt>;
             run.push(p);
         }
     }
-    let style = StrokeStyle { wid: 1.5, col: Paint::ink(100, 0.7), out: 0.0, ..Default::default() };
+    let style = StrokeStyle {
+        wid: 1.5,
+        col: Paint::ink(100, 0.7),
+        out: 0.0,
+        ..Default::default()
+    };
     for (i, run) in runs.iter().enumerate() {
         let mut line = subdivide(run, 4);
         for (j, q) in line.iter_mut().enumerate() {
@@ -83,7 +137,12 @@ fn ridges(sketch: &mut Sketch, chance: &mut Chance, origin: Pt, limb: &[Vec<Pt>;
             q[0] += (chance.noise(fi, fj, 1.0) - 0.5) * (15.0 + 5.0 * chance.gaussian());
             q[1] += (chance.noise(fi, fj, 2.0) - 0.5) * (15.0 + 5.0 * chance.gaussian());
         }
-        stroke(sketch, chance, &translated(&line, origin[0], origin[1]), &style);
+        stroke(
+            sketch,
+            chance,
+            &translated(&line, origin[0], origin[1]),
+            &style,
+        );
     }
 }
 
@@ -109,7 +168,12 @@ mod tests {
     #[test]
     fn short_limb_only_ridges() {
         let (mut s, mut c) = (Sketch::new(), Chance::from_seed(2));
-        barkify(&mut s, &mut c, [0.0, 0.0], &[vec![[0.0, 0.0]], vec![[1.0, 0.0]]]);
+        barkify(
+            &mut s,
+            &mut c,
+            [0.0, 0.0],
+            &[vec![[0.0, 0.0]], vec![[1.0, 0.0]]],
+        );
         assert!(s.len() <= 2);
     }
 }

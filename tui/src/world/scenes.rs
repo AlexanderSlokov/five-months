@@ -21,7 +21,11 @@ pub struct Scene {
 impl Scene {
     fn new(depth: f64, sketch: Sketch) -> Option<Self> {
         let bbox = sketch.bbox()?;
-        Some(Self { depth, sketch, bbox })
+        Some(Self {
+            depth,
+            sketch,
+            bbox,
+        })
     }
 }
 
@@ -41,19 +45,37 @@ fn draw(p: &Placement, chance: &mut Chance) -> Vec<Scene> {
     match p.kind {
         Kind::Mount => {
             let seed = chance.random() * 20.0;
-            mountain(&mut sketch, chance, p.x, p.y, seed, &MountainArgs::default());
+            mountain(
+                &mut sketch,
+                chance,
+                p.x,
+                p.y,
+                seed,
+                &MountainArgs::default(),
+            );
             let mut ripples = Sketch::new();
             water(&mut ripples, chance, p.x, p.y);
             // Water lies under everything, as `y - 10000` did.
-            return [Scene::new(p.y, sketch), Scene::new(p.y - 10_000.0, ripples)].into_iter().flatten().collect();
+            return [Scene::new(p.y, sketch), Scene::new(p.y - 10_000.0, ripples)]
+                .into_iter()
+                .flatten()
+                .collect();
         }
         Kind::FlatMount => {
             let seed = 2.0 * chance.random() * PI;
-            let args = FlatMountArgs { wid: 600.0 + chance.random() * 400.0, hei: 100.0, cho: 0.5 + chance.random() * 0.2, tex: 80 };
+            let args = FlatMountArgs {
+                wid: 600.0 + chance.random() * 400.0,
+                hei: 100.0,
+                cho: 0.5 + chance.random() * 0.2,
+                tex: 80,
+            };
             flat_mount(&mut sketch, chance, p.x, p.y, seed, &args);
         }
         Kind::DistMount => {
-            let (seed, len) = (chance.random() * 100.0, chance.choice(&[500.0, 1000.0, 1500.0]));
+            let (seed, len) = (
+                chance.random() * 100.0,
+                chance.choice(&[500.0, 1000.0, 1500.0]),
+            );
             dist_mount(&mut sketch, chance, p.x, p.y, seed, 150.0, len);
         }
         Kind::Boat => {
@@ -73,14 +95,24 @@ mod tests {
     #[test]
     fn mount_brings_water_below() {
         let mut c = Chance::from_seed(1);
-        let scenes = draw(&Placement { kind: Kind::Mount, x: 0.0, y: 500.0 }, &mut c);
+        let scenes = draw(
+            &Placement {
+                kind: Kind::Mount,
+                x: 0.0,
+                y: 500.0,
+            },
+            &mut c,
+        );
         assert_eq!(scenes.len(), 2);
         assert!(scenes[1].depth < 0.0);
     }
 
     #[test]
     fn chunk_scenes_are_deterministic() {
-        let p = Planner { world_seed: 5, perlin: Arc::new(world_perlin(5)) };
+        let p = Planner {
+            world_seed: 5,
+            perlin: Arc::new(world_perlin(5)),
+        };
         let (a, b) = (chunk_scenes(&p, 0), chunk_scenes(&p, 0));
         assert_eq!(a.len(), b.len());
         assert!(a.iter().zip(&b).all(|(x, y)| x.sketch == y.sketch));

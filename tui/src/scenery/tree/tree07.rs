@@ -53,7 +53,18 @@ fn leaf_mass(chance: &mut Chance, at: Pt, rest: usize) -> Vec<Tri> {
     let len = chance.random() * 50.0 + 20.0;
     let wid = chance.random() * 12.0 + 12.0;
     let ang = -chance.random() * PI / 6.0;
-    let outline = blob_outline(chance, bx, by, &BlobStyle { len, wid, ang, profile: &crown, ..Default::default() });
+    let outline = blob_outline(
+        chance,
+        bx,
+        by,
+        &BlobStyle {
+            len,
+            wid,
+            ang,
+            profile: &crown,
+            ..Default::default()
+        },
+    );
     triangulate(&outline, 50.0, false)
 }
 

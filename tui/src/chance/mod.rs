@@ -55,7 +55,7 @@ impl Chance {
 
 /// The lattice shared by every chunk of the world `world_seed`.
 pub fn world_perlin(world_seed: u64) -> Perlin {
-    Perlin::new(&mut Xoshiro256::from_u64(world_seed ^ 0x5EED_0F_FA7E))
+    Perlin::new(&mut Xoshiro256::from_u64(world_seed ^ 0x5EED_0FFA_7E00))
 }
 
 /// FNV-1a of the user-facing seed text (`--seed naught`).

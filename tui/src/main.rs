@@ -4,10 +4,10 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-use five_months::frame::{Camera, compose, export_svg};
 use five_months::app::Launch;
-use five_months::render::{DotMarker, Palette};
+use five_months::frame::{Camera, compose, export_svg};
 use five_months::render::preview_png::{picture, write_png};
+use five_months::render::{DotMarker, Palette};
 use five_months::world::World;
 
 /// Waiting for 4 and a half billions of years, to watch humanity rise
@@ -51,7 +51,9 @@ fn parse_palette(name: &str) -> Result<Palette, String> {
         "auto" => Ok(Palette::detect(std::env::var("COLORTERM").ok().as_deref())),
         "truecolor" | "24bit" => Ok(Palette::TrueColor),
         "256" => Ok(Palette::Indexed),
-        other => Err(format!("unknown palette {other:?}, expected auto | truecolor | 256")),
+        other => Err(format!(
+            "unknown palette {other:?}, expected auto | truecolor | 256"
+        )),
     }
 }
 
@@ -60,12 +62,17 @@ fn parse_marker(name: &str) -> Result<DotMarker, String> {
         "braille" => Ok(DotMarker::Braille),
         "octant" => Ok(DotMarker::Octant),
         "half-block" | "halfblock" => Ok(DotMarker::HalfBlock),
-        other => Err(format!("unknown marker {other:?}, expected braille | octant | half-block")),
+        other => Err(format!(
+            "unknown marker {other:?}, expected braille | octant | half-block"
+        )),
     }
 }
 
 fn default_seed() -> String {
-    let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
     ms.to_string()
 }
 
@@ -86,12 +93,22 @@ fn main() {
     let cli = Cli::parse();
     let seed = cli.seed.clone().unwrap_or_else(default_seed);
     let result = parse_marker(&cli.marker).and_then(|marker| {
-        let cam = Camera { x: cli.x, marker, ..Default::default() };
+        let cam = Camera {
+            x: cli.x,
+            marker,
+            ..Default::default()
+        };
         if cli.png.is_some() || cli.svg.is_some() {
             return run_offline(&cli, &seed, &cam);
         }
         let palette = parse_palette(&cli.palette)?;
-        five_months::app::run(&Launch { seed: seed.clone(), cam, splash: !cli.no_splash, birthday: cli.birthday, palette })
+        five_months::app::run(&Launch {
+            seed: seed.clone(),
+            cam,
+            splash: !cli.no_splash,
+            birthday: cli.birthday,
+            palette,
+        })
     });
     if let Err(e) = result {
         eprintln!("five-months: {e}");

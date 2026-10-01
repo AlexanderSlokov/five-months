@@ -98,11 +98,18 @@ impl Widget for LandscapeWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if self.veil >= 1.0 {
             // Half blocks have no per-cell paper, so lay a plain sheet first.
-            buf.set_style(area, ratatui::style::Style::default().bg(self.palette.color(VEIL)));
+            buf.set_style(
+                area,
+                ratatui::style::Style::default().bg(self.palette.color(VEIL)),
+            );
             self.lay_paper(area, buf);
             return;
         }
-        let shape = PlateShape { plate: self.plate, palette: self.palette, veil: self.veil };
+        let shape = PlateShape {
+            plate: self.plate,
+            palette: self.palette,
+            veil: self.veil,
+        };
         Canvas::default()
             .marker(ratatui_marker(self.plate.marker))
             .x_bounds([0.0, 1.0])
@@ -149,7 +156,12 @@ mod tests {
         let area = Rect::new(0, 0, 1, 1);
         let mut buf = Buffer::empty(area);
         let p = plate();
-        LandscapeWidget { plate: &p, palette: Palette::TrueColor, veil: 0.0 }.render(area, &mut buf);
+        LandscapeWidget {
+            plate: &p,
+            palette: Palette::TrueColor,
+            veil: 0.0,
+        }
+        .render(area, &mut buf);
         let cell = &buf[(0, 0)];
         assert_eq!(cell.symbol(), "⠁");
         assert_eq!(cell.fg, Color::Rgb(0, 0, 0));

@@ -35,9 +35,19 @@ impl Picture {
 pub fn picture(plate: &DotPlate) -> Picture {
     let (cw, ch) = plate.marker.cell_dots();
     let (cols, rows) = (plate.dots_w / cw, plate.dots_h / ch);
-    let mut pic = Picture { w: cols * CELL_W, h: rows * CELL_H, rgb: vec![0; cols * CELL_W * rows * CELL_H * 3] };
+    let mut pic = Picture {
+        w: cols * CELL_W,
+        h: rows * CELL_H,
+        rgb: vec![0; cols * CELL_W * rows * CELL_H * 3],
+    };
     for (i, bg) in plate.cell_bg.iter().enumerate() {
-        pic.fill((i % cols) * CELL_W, (i / cols) * CELL_H, CELL_W, CELL_H, *bg);
+        pic.fill(
+            (i % cols) * CELL_W,
+            (i / cols) * CELL_H,
+            CELL_W,
+            CELL_H,
+            *bg,
+        );
     }
     let (dw, dh) = (CELL_W / cw, CELL_H / ch);
     for (i, dot) in plate.dots.iter().enumerate() {
@@ -57,8 +67,12 @@ pub fn write_png(pic: &Picture, path: &Path) -> Result<(), String> {
     let mut enc = png::Encoder::new(BufWriter::new(file), pic.w as u32, pic.h as u32);
     enc.set_color(png::ColorType::Rgb);
     enc.set_depth(png::BitDepth::Eight);
-    let mut writer = enc.write_header().map_err(|e| format!("png header for {}: {e}", path.display()))?;
-    writer.write_image_data(&pic.rgb).map_err(|e| format!("png data for {}: {e}", path.display()))
+    let mut writer = enc
+        .write_header()
+        .map_err(|e| format!("png header for {}: {e}", path.display()))?;
+    writer
+        .write_image_data(&pic.rgb)
+        .map_err(|e| format!("png data for {}: {e}", path.display()))
 }
 
 #[cfg(test)]
@@ -69,7 +83,13 @@ mod tests {
     fn picture_size_and_dot() {
         let mut dots = vec![None; 8];
         dots[0] = Some([0.0; 3]);
-        let plate = DotPlate { marker: DotMarker::Braille, dots_w: 2, dots_h: 4, dots, cell_bg: vec![[1.0; 3]] };
+        let plate = DotPlate {
+            marker: DotMarker::Braille,
+            dots_w: 2,
+            dots_h: 4,
+            dots,
+            cell_bg: vec![[1.0; 3]],
+        };
         let pic = picture(&plate);
         assert_eq!((pic.w, pic.h), (8, 16));
         let at = |x: usize, y: usize| pic.rgb[(y * 8 + x) * 3];
