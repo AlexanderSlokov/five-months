@@ -7,6 +7,7 @@ use clap::Parser;
 use five_months::app::Launch;
 use five_months::frame::{Camera, compose, export_svg};
 use five_months::render::preview_png::{picture, write_png};
+use five_months::render::tone::InkWeight;
 use five_months::render::{DotMarker, Palette};
 use five_months::world::World;
 
@@ -41,6 +42,12 @@ struct Cli {
     /// braille | octant | half-block
     #[arg(long, default_value = "braille")]
     marker: String,
+    /// Ink weight: light | normal | bold.
+    #[arg(long, default_value = "bold")]
+    ink: String,
+    /// Auto-scroll speed in world units per second.
+    #[arg(long, default_value_t = 30.0)]
+    speed: f64,
     /// auto | truecolor | 256
     #[arg(long, default_value = "auto")]
     palette: String,
@@ -96,6 +103,7 @@ fn main() {
         let cam = Camera {
             x: cli.x,
             marker,
+            ink: InkWeight::parse(&cli.ink)?,
             ..Default::default()
         };
         if cli.png.is_some() || cli.svg.is_some() {
@@ -108,6 +116,7 @@ fn main() {
             splash: !cli.no_splash,
             birthday: cli.birthday,
             palette,
+            speed: cli.speed,
         })
     });
     if let Err(e) = result {

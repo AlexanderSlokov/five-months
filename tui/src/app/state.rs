@@ -9,9 +9,21 @@ use crate::world::World;
 
 /// Default auto-scroll speed in world units per second (the original
 /// stepped 200 every 2 s).
-pub const AUTO_SPEED: f64 = 100.0;
+pub const AUTO_SPEED: f64 = 30.0;
 /// Step of the arrow keys (the original's `<` / `>` buttons).
 pub const STEP: f64 = 200.0;
+
+/// Everything that decides what a frame looks like; when it has not
+/// changed since the last draw, nothing is sent to the terminal.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FrameKey {
+    dot_x: i64,
+    cam: [u64; 2],
+    looks: (crate::render::DotMarker, crate::render::tone::InkWeight),
+    area: (u16, u16),
+    pixels: u64,
+    overlay: (bool, bool, Option<String>, Option<u128>, bool),
+}
 
 /// A short message shown in the status line.
 pub struct Notice {
@@ -51,7 +63,7 @@ impl AppState {
             world: World::new(seed),
             epoch: 0,
             workers: ChunkWorkers::start(),
-            darkroom: Darkroom::default(),
+            darkroom: Darkroom::live(),
             cam,
             auto: false,
             speed: AUTO_SPEED,
@@ -74,6 +86,29 @@ impl AppState {
         });
     }
 
+    /// Fingerprint of the frame about to be drawn into `area`.
+    pub fn frame_key(&self, area: (u16, u16)) -> FrameKey {
+        let view = self.cam.viewport(area.0, area.1);
+        let splash_step = self
+            .splash
+            .as_ref()
+            .map(|s| s.started.elapsed().as_millis() / 40);
+        FrameKey {
+            dot_x: (view.left / view.scale).round() as i64,
+            cam: [self.cam.zoom.to_bits(), self.cam.pan.to_bits()],
+            looks: (self.cam.marker, self.cam.ink),
+            area,
+            pixels: self.darkroom.version(),
+            overlay: (
+                self.show_help,
+                self.show_status,
+                self.notice.as_ref().map(|n| n.text.clone()),
+                splash_step,
+                self.workers.busy(),
+            ),
+        }
+    }
+
     /// Moves the scroll by `dx` world units.
     pub fn scroll(&mut self, dx: f64) {
         self.cam.x += dx;
@@ -84,7 +119,7 @@ impl AppState {
         self.epoch += 1;
         self.workers.retire_before(self.epoch);
         self.world = World::new(seed);
-        self.darkroom = Darkroom::default();
+        self.darkroom = Darkroom::live();
         self.notify(format!("seed: {seed}"));
     }
 
@@ -109,7 +144,7 @@ impl AppState {
             if done.epoch != self.epoch {
                 continue;
             }
-            if let Some(span) = self.world.insert(done.chunk, done.scenes) {
+            for span in self.world.insert(done.chunk, done.scenes) {
                 self.darkroom.invalidate(span);
             }
         }
@@ -140,6 +175,33 @@ mod tests {
         s.auto = true;
         s.tick(Duration::from_secs(2));
         assert!((s.cam.x - 2.0 * AUTO_SPEED).abs() < 1e-9);
+    }
+
+    #[test]
+    fn auto_scroll_steps_one_dot_at_even_intervals() {
+        let mut s = state();
+        s.auto = true;
+        let scale = s.cam.viewport(120, 36).scale;
+        let mut steps = Vec::new();
+        let mut last = s.frame_key((120, 36)).dot_x;
+        for frame in 0..600 {
+            s.tick(Duration::from_micros(16_667));
+            let x = s.frame_key((120, 36)).dot_x;
+            assert!(x - last <= 1, "jumped {} dots", x - last);
+            if x != last {
+                steps.push(frame);
+            }
+            last = x;
+        }
+        let gaps: Vec<i32> = steps.windows(2).map(|w| w[1] - w[0]).collect();
+        let (lo, hi) = (gaps.iter().min().unwrap(), gaps.iter().max().unwrap());
+        assert!(hi - lo <= 1, "uneven steps {gaps:?} at scale {scale}");
+    }
+
+    #[test]
+    fn idle_frames_have_equal_keys() {
+        let s = state();
+        assert_eq!(s.frame_key((80, 24)), s.frame_key((80, 24)));
     }
 
     #[test]

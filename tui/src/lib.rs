@@ -8,6 +8,7 @@ pub mod easter;
 pub mod frame;
 pub mod geom;
 pub mod ink;
+pub mod pool;
 pub mod render;
 pub mod scenery;
 pub mod world;

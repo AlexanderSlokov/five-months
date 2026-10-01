@@ -14,7 +14,7 @@ fn main() {
     let missing = world.missing(xmin - 3000.0, xmax + 3000.0);
     let t = Instant::now();
     for k in &missing {
-        let _ = world.generate(*k);
+        world.generate(*k);
     }
     println!(
         "generate {} chunks: {:?} ({:?}/chunk)",
@@ -26,7 +26,7 @@ fn main() {
         let mut room = Darkroom::default();
         let cam = Camera { marker, ..cam };
         let t = Instant::now();
-        let _ = room.develop(&world, &cam, cols, rows);
+        let _ = room.develop(&world, &cam, cols, rows, 0);
         println!("{marker:?} first frame: {:?}", t.elapsed());
         let t = Instant::now();
         for i in 0..100 {
@@ -38,6 +38,7 @@ fn main() {
                 },
                 cols,
                 rows,
+                0,
             );
         }
         println!("{marker:?} scrolling: {:?}/frame", t.elapsed() / 100);

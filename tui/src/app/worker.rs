@@ -2,14 +2,12 @@
 //! be drawn (a chunk takes ~30 ms).
 
 use std::collections::HashSet;
-use std::sync::mpsc::{Receiver, Sender, channel};
-use std::sync::{Arc, Mutex};
-use std::thread;
 
+use crate::pool::Pool;
 use crate::world::planner::Planner;
 use crate::world::scenes::{Scene, chunk_scenes};
 
-const THREADS: usize = 4;
+const THREADS: usize = 3;
 
 /// A request: which world (`epoch`) and which chunk.
 struct Job {
@@ -25,26 +23,26 @@ pub struct Done {
     pub scenes: Vec<Scene>,
 }
 
-/// Pool of generator threads fed through one queue.
+/// Generator threads plus the set of chunks already asked for.
 pub struct ChunkWorkers {
-    jobs: Sender<Job>,
-    done: Receiver<Done>,
+    pool: Pool<Job, Done>,
     pending: HashSet<(u64, i64)>,
+}
+
+fn generate(job: Job) -> Done {
+    let scenes = chunk_scenes(&job.planner, job.chunk);
+    Done {
+        epoch: job.epoch,
+        chunk: job.chunk,
+        scenes,
+    }
 }
 
 impl ChunkWorkers {
     /// Starts the pool. Example: `let mut w = ChunkWorkers::start();`
     pub fn start() -> Self {
-        let (jobs, job_rx) = channel::<Job>();
-        let (done_tx, done) = channel::<Done>();
-        let job_rx = Arc::new(Mutex::new(job_rx));
-        for _ in 0..THREADS {
-            let (rx, tx) = (job_rx.clone(), done_tx.clone());
-            thread::spawn(move || work(&rx, &tx));
-        }
         Self {
-            jobs,
-            done,
+            pool: Pool::start(THREADS, generate),
             pending: HashSet::new(),
         }
     }
@@ -52,7 +50,7 @@ impl ChunkWorkers {
     /// Queues `chunk` unless it is already on its way.
     pub fn request(&mut self, epoch: u64, planner: &Planner, chunk: i64) {
         if self.pending.insert((epoch, chunk)) {
-            let _ = self.jobs.send(Job {
+            self.pool.send(Job {
                 epoch,
                 planner: planner.clone(),
                 chunk,
@@ -62,7 +60,7 @@ impl ChunkWorkers {
 
     /// Finished chunks, without blocking.
     pub fn collect(&mut self) -> Vec<Done> {
-        let out: Vec<Done> = self.done.try_iter().collect();
+        let out = self.pool.finished();
         for d in &out {
             self.pending.remove(&(d.epoch, d.chunk));
         }
@@ -76,27 +74,6 @@ impl ChunkWorkers {
     /// Forgets requests of older worlds (their results will be ignored).
     pub fn retire_before(&mut self, epoch: u64) {
         self.pending.retain(|(e, _)| *e >= epoch);
-    }
-}
-
-fn work(jobs: &Mutex<Receiver<Job>>, done: &Sender<Done>) {
-    loop {
-        let job = match jobs.lock() {
-            Ok(rx) => rx.recv(),
-            Err(_) => return,
-        };
-        let Ok(job) = job else { return };
-        let scenes = chunk_scenes(&job.planner, job.chunk);
-        if done
-            .send(Done {
-                epoch: job.epoch,
-                chunk: job.chunk,
-                scenes,
-            })
-            .is_err()
-        {
-            return;
-        }
     }
 }
 

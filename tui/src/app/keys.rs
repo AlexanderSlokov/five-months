@@ -15,6 +15,7 @@ pub enum Action {
     Zoom(f64),
     Pan(f64),
     NextMarker,
+    NextInk,
     NewSeed,
     ExportSvg,
     ToggleStatus,
@@ -43,6 +44,7 @@ pub fn action_for(key: KeyEvent) -> Option<Action> {
         KeyCode::Up | KeyCode::Char('k') => Some(Action::Pan(-0.1)),
         KeyCode::Down | KeyCode::Char('j') => Some(Action::Pan(0.1)),
         KeyCode::Char('m') => Some(Action::NextMarker),
+        KeyCode::Char('w') => Some(Action::NextInk),
         KeyCode::Char('r') => Some(Action::NewSeed),
         KeyCode::Char('e') => Some(Action::ExportSvg),
         KeyCode::Char('i') => Some(Action::ToggleStatus),
@@ -73,6 +75,10 @@ pub fn apply(state: &mut AppState, action: Action, size: (u16, u16)) {
         Action::NextMarker => {
             state.cam.marker = state.cam.marker.next();
             state.notify(state.cam.marker.name());
+        }
+        Action::NextInk => {
+            state.cam.ink = state.cam.ink.next();
+            state.notify(state.cam.ink.name());
         }
         Action::NewSeed => state.reseed(&random_seed()),
         Action::ExportSvg => export(state, size),
