@@ -1,0 +1,10 @@
+[package]
+name = "five-months"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+clap = { version = "4", features = ["derive"] }
+png = "0.18"
+ratatui = "0.30"
