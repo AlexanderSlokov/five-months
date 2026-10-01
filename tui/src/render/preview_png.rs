@@ -89,6 +89,7 @@ mod tests {
             dots_h: 4,
             dots,
             cell_bg: vec![[1.0; 3]],
+            cell_idle_fg: vec![[0.0; 3]],
         };
         let pic = picture(&plate);
         assert_eq!((pic.w, pic.h), (8, 16));

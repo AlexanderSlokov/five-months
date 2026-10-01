@@ -14,13 +14,14 @@ use crate::easter::seal::Seal;
 use crate::easter::splash::{INK, PAPER, SplashText, text_alpha, veil};
 use crate::render::LandscapeWidget;
 
-const HELP: [&str; 12] = [
+const HELP: [&str; 13] = [
     "←/→  h/l    scroll        (Shift: ×5)",
     "space       auto-scroll",
     "[ / ]       slower / faster",
     "+ / -       zoom",
     "↑/↓  k/j    look up / down (zoomed)",
     "m           braille · octant · half-block",
+    "w           ink: light · normal · bold",
     "r           new seed",
     "e           save SVG",
     "i           status line",

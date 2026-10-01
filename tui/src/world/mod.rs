@@ -20,7 +20,31 @@ const SPRAWL: f64 = 1200.0;
 pub struct World {
     pub seed_text: String,
     planner: Planner,
-    chunks: BTreeMap<i64, Vec<Scene>>,
+    chunks: BTreeMap<i64, Arc<Vec<Scene>>>,
+}
+
+/// A cheap, shareable selection of generated scenes (clones only `Arc`s),
+/// so tiles can be rendered on another thread while the world grows.
+#[derive(Clone, Default)]
+pub struct SceneSet {
+    chunks: Vec<Arc<Vec<Scene>>>,
+}
+
+impl SceneSet {
+    /// Polygons overlapping `[xmin, xmax]`, in painting order.
+    pub fn polygons_in(&self, xmin: f64, xmax: f64) -> Vec<&InkPolygon> {
+        let mut scenes: Vec<&Scene> = self
+            .chunks
+            .iter()
+            .flat_map(|c| c.iter())
+            .filter(|s| s.bbox[2] >= xmin && s.bbox[0] <= xmax)
+            .collect();
+        scenes.sort_by(|a, b| a.depth.total_cmp(&b.depth));
+        scenes
+            .into_iter()
+            .flat_map(|s| &s.sketch.polygons)
+            .collect()
+    }
 }
 
 impl World {
@@ -51,28 +75,25 @@ impl World {
             .collect()
     }
 
-    /// Generates chunk `k` now; returns the world x span it painted on
-    /// (`None` if it was already there or is empty).
-    pub fn generate(&mut self, k: i64) -> Option<[f64; 2]> {
+    /// Generates chunk `k` now; returns the world x span of each scene it
+    /// painted (empty if it was already there).
+    pub fn generate(&mut self, k: i64) -> Vec<[f64; 2]> {
         if self.chunks.contains_key(&k) {
-            return None;
+            return Vec::new();
         }
         let scenes = chunk_scenes(&self.planner, k);
         self.insert(k, scenes)
     }
 
     /// Stores a chunk generated elsewhere (e.g. on a worker thread);
-    /// returns the world x span it covers, for cache invalidation.
-    pub fn insert(&mut self, k: i64, scenes: Vec<Scene>) -> Option<[f64; 2]> {
+    /// returns the world x span of each scene, for cache invalidation.
+    pub fn insert(&mut self, k: i64, scenes: Vec<Scene>) -> Vec<[f64; 2]> {
         if self.chunks.contains_key(&k) {
-            return None;
+            return Vec::new();
         }
-        let span = scenes
-            .iter()
-            .map(|s| [s.bbox[0], s.bbox[2]])
-            .reduce(|a, b| [a[0].min(b[0]), a[1].max(b[1])]);
-        self.chunks.insert(k, scenes);
-        span
+        let spans = scenes.iter().map(|s| [s.bbox[0], s.bbox[2]]).collect();
+        self.chunks.insert(k, Arc::new(scenes));
+        spans
     }
 
     pub fn planner(&self) -> &Planner {
@@ -82,7 +103,7 @@ impl World {
     /// Generates everything `[xmin, xmax]` needs.
     pub fn ensure(&mut self, xmin: f64, xmax: f64) {
         for k in self.missing(xmin, xmax) {
-            let _ = self.generate(k);
+            self.generate(k);
         }
     }
 
@@ -92,17 +113,21 @@ impl World {
         self.chunks.retain(|k, _| range.contains(k));
     }
 
-    /// Polygons overlapping `[xmin, xmax]`, in painting order.
-    pub fn polygons_in(&self, xmin: f64, xmax: f64) -> Vec<&InkPolygon> {
-        let mut scenes: Vec<&Scene> = Self::chunk_range(xmin, xmax)
-            .filter_map(|k| self.chunks.get(&k))
-            .flatten()
-            .filter(|s| s.bbox[2] >= xmin && s.bbox[0] <= xmax)
+    /// Generated scenes that may reach into `[xmin, xmax]`.
+    pub fn scene_set(&self, xmin: f64, xmax: f64) -> SceneSet {
+        let chunks = Self::chunk_range(xmin, xmax)
+            .filter_map(|k| self.chunks.get(&k).cloned())
             .collect();
-        scenes.sort_by(|a, b| a.depth.total_cmp(&b.depth));
-        scenes
+        SceneSet { chunks }
+    }
+
+    /// Polygons overlapping `[xmin, xmax]`, in painting order (owned copy;
+    /// for one-off exports).
+    pub fn polygons_in(&self, xmin: f64, xmax: f64) -> Vec<InkPolygon> {
+        self.scene_set(xmin, xmax)
+            .polygons_in(xmin, xmax)
             .into_iter()
-            .flat_map(|s| &s.sketch.polygons)
+            .cloned()
             .collect()
     }
 

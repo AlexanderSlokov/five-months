@@ -29,7 +29,22 @@ impl Paper {
         let c = (c / 255.0) as f32;
         [c, c * 0.95, c * 0.85]
     }
+
+    /// Like [`Paper::tint`] but snapped to [`PAPER_BANDS`] shades and
+    /// without grain: neighbouring cells then share a colour, and the
+    /// terminal is sent far fewer colour codes per frame.
+    pub fn banded(&self, x: usize, y: usize, freq: f64) -> Rgb {
+        let n = self.perlin.noise(x as f64 * freq, y as f64 * freq, 0.0);
+        let band = ((n - 0.25) / 0.5 * PAPER_BANDS as f64)
+            .floor()
+            .clamp(0.0, (PAPER_BANDS - 1) as f64);
+        let c = ((240.0 + band * 4.0) / 255.0) as f32;
+        [c, c * 0.95, c * 0.85]
+    }
 }
+
+/// Number of distinct paper shades in banded mode.
+pub const PAPER_BANDS: usize = 3;
 
 /// Stable per-position grain in `[0, 1)` (a hash, so frames never flicker).
 fn grain(x: usize, y: usize) -> f64 {
@@ -58,6 +73,17 @@ mod tests {
             assert!(r > 0.85 && r <= 1.0, "r {r}");
             assert!(r > g && g > b);
         }
+    }
+
+    #[test]
+    fn banded_has_few_shades() {
+        let p = Paper::default();
+        let mut shades: Vec<u32> = (0..400)
+            .map(|i| (p.banded(i % 40, i / 40, 0.06)[0] * 1000.0) as u32)
+            .collect();
+        shades.sort();
+        shades.dedup();
+        assert!(shades.len() <= PAPER_BANDS, "{shades:?}");
     }
 
     #[test]

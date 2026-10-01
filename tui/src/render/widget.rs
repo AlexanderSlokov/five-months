@@ -128,8 +128,13 @@ impl LandscapeWidget<'_> {
         let cols = self.plate.dots_w / cw;
         for (i, bg) in self.plate.cell_bg.iter().enumerate() {
             let (x, y) = ((i % cols) as u16, (i / cols) as u16);
-            if x < area.width && y < area.height {
-                buf[(area.x + x, area.y + y)].set_bg(self.palette.color(*bg));
+            if x >= area.width || y >= area.height {
+                continue;
+            }
+            let cell = &mut buf[(area.x + x, area.y + y)];
+            cell.set_bg(self.palette.color(*bg));
+            if let (" ", Some(fg)) = (cell.symbol(), self.plate.cell_idle_fg.get(i)) {
+                cell.set_fg(self.palette.color(*fg));
             }
         }
     }
@@ -148,6 +153,7 @@ mod tests {
             dots_h: 4,
             dots,
             cell_bg: vec![[1.0, 0.9, 0.8]],
+            cell_idle_fg: vec![[0.1; 3]],
         }
     }
 

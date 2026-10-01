@@ -18,7 +18,17 @@ make png X=3000          # one frame to a PNG, without a terminal
 make                     # every other target
 ```
 
-Keys: `space` pause / resume, `←/→` wander (Shift ×5), `[ ]` speed, `+ -` zoom, `↑/↓` look up/down, `m` braille · octant · half-block, `r` new seed, `e` save SVG, `i` status line, `?` help, `q` quit.
+Keys: `space` pause / resume, `←/→` wander (Shift ×5), `[ ]` speed, `+ -` zoom, `↑/↓` look up/down, `m` braille · octant · half-block, `w` ink light · normal · bold, `r` new seed, `e` save SVG, `i` status line, `?` help, `q` quit.
+
+Flags: `--speed 30` (world units per second), `--ink bold|normal|light`, `--marker braille|octant|half-block`, `--palette auto|truecolor|256`, `--no-splash`. See `five-months --help`.
+
+### For the smoothest scroll
+
+Every one-dot step of the scroll redraws most of the screen, so the terminal emulator matters more than the CPU:
+
+- **Best:** GPU-rendered terminals with truecolor and synchronized output, e.g. [kitty](https://sw.kovidgoyal.net/kitty/), [WezTerm](https://wezfurlong.org/wezterm/), [Ghostty](https://ghostty.org/), [Alacritty](https://alacritty.org/) or [foot](https://codeberg.org/dnkl/foot) (Wayland).
+- **Works, less smooth:** GNOME Terminal / Ptyxis (Ubuntu's default), Konsole, the VS Code terminal. If it stutters, try `--speed 20`, a smaller window, or a larger font (fewer cells to redraw).
+- **Fonts:** pick one whose braille glyphs fill the cell, e.g. DejaVu Sans Mono, JetBrains Mono, Iosevka or any Nerd Font; `--marker half-block` needs no special glyphs at all.
 
 ## Credits
 
